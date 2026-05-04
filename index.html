@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大模型学习之旅 - 从零到生产</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--p:#6366f1;--pl:#818cf8;--pd:#4f46e5;--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--tx:#e2e8f0;--tx2:#94a3b8;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--acc:#06b6d4}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);line-height:1.7}
+.app{display:flex;min-height:100vh}
+.side{width:280px;background:var(--bg2);border-right:1px solid var(--bg3);position:fixed;height:100vh;overflow-y:auto;z-index:100}
+.side-hd{padding:20px;border-bottom:1px solid var(--bg3)}
+.side-hd h1{font-size:17px;background:linear-gradient(135deg,var(--pl),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.side-hd p{font-size:11px;color:var(--tx2);margin-top:2px}
+.ns{padding:8px 0}
+.ns-t{padding:6px 20px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--tx2);font-weight:600}
+.ni{display:flex;align-items:center;padding:8px 20px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--tx2);gap:8px;border-left:3px solid transparent}
+.ni:hover{background:rgba(99,102,241,.1);color:var(--tx)}
+.ni.on{background:rgba(99,102,241,.15);color:var(--pl);border-left-color:var(--p)}
+.ni.dn{color:var(--ok)}
+.ni .ck{margin-left:auto;font-size:11px;color:var(--ok)}
+.pb-c{padding:12px 20px;border-top:1px solid var(--bg3)}
+.pb-l{display:flex;justify-content:space-between;font-size:11px;color:var(--tx2);margin-bottom:4px}
+.pb{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.pb-f{height:100%;background:linear-gradient(90deg,var(--p),var(--acc));border-radius:3px;transition:width .5s}
+.main{margin-left:280px;flex:1}
+.ct{max-width:860px;margin:0 auto;padding:40px 32px 80px}
+.lh{margin-bottom:32px}
+.badge{display:inline-block;padding:3px 10px;background:rgba(99,102,241,.2);color:var(--pl);border-radius:20px;font-size:11px;font-weight:600;margin-bottom:10px}
+.lt{font-size:30px;font-weight:700;margin-bottom:6px;line-height:1.3}
+.ld{color:var(--tx2);font-size:14px}
+.sec{margin-bottom:32px}
+.sec h2{font-size:20px;font-weight:600;margin-bottom:14px;color:var(--tx)}
+.sec h3{font-size:17px;font-weight:600;margin:18px 0 10px;color:var(--pl)}
+.sec p{margin-bottom:12px;color:var(--tx2);font-size:14px}
+.fey{background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(6,182,212,.1));border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:20px;margin:16px 0}
+.fey .lb{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--acc);font-weight:600;margin-bottom:6px}
+.fey p{color:var(--tx);font-size:14px}
+.ana{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:18px;margin:14px 0}
+.ana .lb{font-size:11px;color:var(--warn);font-weight:600;margin-bottom:4px}
+.kp{background:rgba(16,185,129,.08);border-left:3px solid var(--ok);padding:14px 18px;margin:14px 0;border-radius:0 8px 8px 0}
+.kp .lb{font-size:11px;color:var(--ok);font-weight:600;margin-bottom:4px}
+.ia{background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:20px;margin:16px 0}
+.ia h4{font-size:15px;margin-bottom:14px;color:var(--tx)}
+.cc{background:#0a0f1a;border-radius:8px;padding:12px;margin:10px 0;text-align:center}
+canvas{border-radius:4px}
+.sg{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+.sg label{font-size:12px;color:var(--tx2);min-width:80px}
+.sg input[type=range]{flex:1;min-width:100px;accent-color:var(--p)}
+.sg .v{font-size:12px;color:var(--pl);min-width:36px;text-align:right;font-family:monospace}
+.qb{background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:20px;margin:16px 0}
+.qb h4{margin-bottom:14px;font-size:15px}
+.qo{display:block;padding:10px 14px;margin:6px 0;background:var(--bg);border:1px solid var(--bg3);border-radius:8px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--tx2);width:100%;text-align:left}
+.qo:hover{border-color:var(--p);color:var(--tx)}
+.qo.ok{border-color:var(--ok);background:rgba(16,185,129,.1);color:var(--ok)}
+.qo.no{border-color:var(--err);background:rgba(239,68,68,.1);color:var(--err)}
+.qf{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;display:none}
+.qf.show{display:block}
+.math{background:rgba(99,102,241,.08);border-radius:8px;padding:14px 18px;margin:10px 0;font-size:16px;text-align:center;color:var(--pl);line-height:2}
+.btn{padding:8px 20px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.btn-p{background:var(--p);color:white}.btn-p:hover{background:var(--pd)}
+.btn-s{background:var(--bg3);color:var(--tx)}.btn-s:hover{background:rgba(99,102,241,.3)}
+.bg{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.ei{width:100%;min-height:80px;background:var(--bg);border:1px solid var(--bg3);border-radius:8px;padding:10px;color:var(--tx);font-size:13px;resize:vertical;font-family:inherit;line-height:1.6}
+.ei:focus{outline:none;border-color:var(--p)}
+.er{margin-top:10px;padding:12px;border-radius:8px;display:none;font-size:13px;line-height:1.6}
+.er.show{display:block}
+.tabs{display:flex;gap:3px;margin-bottom:14px;background:var(--bg);border-radius:8px;padding:3px}
+.tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--tx2);transition:all .2s;flex:1;text-align:center}
+.tab.on{background:var(--p);color:white}
+.tab:hover:not(.on){background:var(--bg3)}
+.steps{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+.stp{padding:5px 14px;border-radius:16px;font-size:12px;font-weight:600;background:var(--bg3);color:var(--tx2);cursor:pointer;transition:all .3s}
+.stp.on{background:var(--p);color:white}
+.stp.dn{background:var(--ok);color:white}
+.mc{display:inline-grid;gap:2px;margin:6px;vertical-align:middle}
+.mi{width:44px;height:32px;background:var(--bg);border:1px solid var(--bg3);border-radius:4px;text-align:center;color:var(--pl);font-size:13px;font-family:monospace;padding:0}
+.mi:focus{border-color:var(--p);outline:none}
+.mr{display:inline-grid;gap:2px;margin:6px;vertical-align:middle}
+.mrc{width:44px;height:32px;background:rgba(16,185,129,.1);border:1px solid var(--ok);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ok);font-size:13px;font-family:monospace}
+.tk{display:inline-block;padding:3px 8px;margin:2px;border-radius:4px;font-size:12px;cursor:pointer;transition:all .2s}
+.fn{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:20px;border-top:1px solid var(--bg3)}
+/* Code blocks with Rust syntax highlighting */
+.cb{background:#0a0f1a;border:1px solid var(--bg3);border-radius:10px;margin:14px 0;overflow:hidden}
+.cb-h{padding:6px 14px;background:rgba(99,102,241,.08);border-bottom:1px solid var(--bg3);font-size:11px;color:var(--tx2);font-family:monospace;display:flex;align-items:center;gap:6px}
+.cb-h:before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--p)}
+.cb pre{padding:14px;margin:0;overflow-x:auto;font-size:12.5px;line-height:1.7;font-family:'Fira Code',Consolas,monospace;color:#c4c9d4}
+.cb code{font-family:inherit}
+.rk{color:#c084fc}
+.rt{color:#67e8f9}
+.rs{color:#fbbf24}
+.rc{color:#6b7280;font-style:italic}
+.rn{color:#93c5fd}
+.rf{color:#86efac}
+/* BPE tokens */
+.bpe-tk{display:inline-block;padding:2px 6px;margin:1px;border-radius:3px;font-size:12px;font-family:monospace;border:1px solid var(--bg3)}
+.bpe-new{background:rgba(99,102,241,.2);border-color:var(--p);color:var(--pl)}
+.bpe-old{background:var(--bg);color:var(--tx2)}
+/* LoRA matrix diagram */
+.lora-box{display:inline-block;border:2px solid;border-radius:6px;padding:8px 12px;text-align:center;font-size:11px;font-family:monospace;margin:4px}
+/* Double buffer */
+.dbuf{display:inline-block;border:2px solid;border-radius:8px;padding:12px 20px;text-align:center;font-size:13px;min-width:140px;transition:all .5s}
+.dbuf-a{border-color:var(--ok);background:rgba(16,185,129,.1);color:var(--ok)}
+.dbuf-s{border-color:var(--warn);background:rgba(245,158,11,.1);color:var(--warn)}
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeIn .4s ease}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.typing{animation:pulse 1.5s infinite}
+@media(max-width:768px){.side{transform:translateX(-100%);transition:transform .3s}.side.open{transform:translateX(0)}.main{margin-left:0}.mt{display:block}.ct{padding:20px 14px 60px}.cb pre{font-size:11px}}
+.mt{display:none;position:fixed;top:12px;left:12px;z-index:200;background:var(--p);color:white;border:none;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer}
+/* Code Exercise */
+.ex{background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:20px;margin:16px 0}
+.ex h4{font-size:15px;margin-bottom:4px;color:var(--tx)}
+.ex .ex-desc{font-size:12px;color:var(--tx2);margin-bottom:12px}
+.ex-code{background:#0a0f1a;border:1px solid var(--bg3);border-radius:8px;overflow:hidden;margin:10px 0}
+.ex-code-h{padding:5px 12px;background:rgba(245,158,11,.1);border-bottom:1px solid var(--bg3);font-size:10px;color:var(--warn);font-family:monospace;display:flex;align-items:center;gap:6px}
+.ex-code-h:before{content:'✏️'}
+.ex-pre{padding:12px;margin:0;font-size:12px;line-height:1.7;font-family:'Fira Code',Consolas,monospace;color:#c4c9d4;white-space:pre;overflow-x:auto}
+.ex-blank{background:rgba(245,158,11,.12);border:1px dashed var(--warn);border-radius:4px;padding:2px 6px;color:var(--warn);font-family:'Fira Code',Consolas,monospace;font-size:12px;min-width:80px;display:inline-block;outline:none;caret-color:var(--warn)}
+.ex-blank:focus{border-color:var(--pl);background:rgba(99,102,241,.12);color:var(--pl)}
+.ex-blank.ex-ok{border-color:var(--ok);background:rgba(16,185,129,.12);color:var(--ok);border-style:solid}
+.ex-blank.ex-no{border-color:var(--err);background:rgba(239,68,68,.12);color:var(--err);border-style:solid}
+.ex-fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;display:none;line-height:1.6}
+.ex-fb.show{display:block}
+.ex-hint{font-size:11px;color:var(--tx2);margin-top:6px;cursor:pointer;user-select:none}
+.ex-hint:hover{color:var(--pl)}
+.ex-hint-text{font-size:12px;color:var(--warn);margin-top:4px;display:none;padding:8px 12px;background:rgba(245,158,11,.06);border-radius:6px}
+.ex-hint-text.show{display:block}
+.ex-run{display:inline-flex;align-items:center;gap:4px;background:var(--ok);color:white;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;transition:all .2s}
+.ex-run:hover{background:#059669}
+.ex-output{background:#0a0f1a;border:1px solid var(--bg3);border-radius:8px;padding:10px 14px;margin-top:8px;font-family:monospace;font-size:12px;color:var(--ok);display:none;white-space:pre-wrap}
+.ex-output.show{display:block}
+.ex-output.err{color:var(--err)}
+/* Practice summary badge */
+.prac-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:rgba(245,158,11,.15);color:var(--warn);border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}
+</style>
+</head>
+<body>
+<button class="mt" onclick="document.querySelector('.side').classList.toggle('open')">&#9776;</button>
+<div class="app">
+<nav class="side" id="sidebar">
+<div class="side-hd"><h1>&#129504; 大模型学习之旅</h1><p>从零基础到生产实践 · 融合 SPTorch</p></div>
+<div class="ns">
+<div class="ns-t">第一章 · 数学基础</div>
+<div class="ni on" data-l="0"><span>&#128208;</span>向量与矩阵<span class="ck"></span></div>
+<div class="ni" data-l="1"><span>&#128200;</span>函数与导数<span class="ck"></span></div>
+<div class="ni" data-l="2"><span>&#127922;</span>概率与统计<span class="ck"></span></div>
+</div>
+<div class="ns">
+<div class="ns-t">第二章 · 机器学习</div>
+<div class="ni" data-l="3"><span>&#128302;</span>什么是机器学习<span class="ck"></span></div>
+<div class="ni" data-l="4"><span>&#128202;</span>线性回归<span class="ck"></span></div>
+<div class="ni" data-l="5"><span>&#127919;</span>梯度下降<span class="ck"></span></div>
+<div class="ni" data-l="6"><span>&#127991;</span>分类与逻辑回归<span class="ck"></span></div>
+</div>
+<div class="ns">
+<div class="ns-t">第三章 · 深度学习</div>
+<div class="ni" data-l="7"><span>&#129516;</span>神经网络基础<span class="ck"></span></div>
+<div class="ni" data-l="8"><span>&#9889;</span>激活函数与反向传播<span class="ck"></span></div>
+<div class="ni" data-l="9"><span>&#128292;</span>词嵌入与表示学习<span class="ck"></span></div>
+</div>
+<div class="ns">
+<div class="ns-t">第四章 · LLM 架构</div>
+<div class="ni" data-l="10"><span>&#128065;</span>注意力机制<span class="ck"></span></div>
+<div class="ni" data-l="11"><span>&#127959;</span>Transformer 架构<span class="ck"></span></div>
+<div class="ni" data-l="12"><span>&#129302;</span>GPT 与文本生成<span class="ck"></span></div>
+<div class="ni" data-l="13"><span>&#127891;</span>训练与对齐<span class="ck"></span></div>
+</div>
+<div class="ns">
+<div class="ns-t">第五章 · 工程实践</div>
+<div class="ni" data-l="14"><span>&#9881;</span>自动微分引擎<span class="ck"></span></div>
+<div class="ni" data-l="15"><span>&#128221;</span>分词与 BPE<span class="ck"></span></div>
+<div class="ni" data-l="16"><span>&#128268;</span>LoRA 微调<span class="ck"></span></div>
+<div class="ni" data-l="17"><span>&#128640;</span>优化器详解<span class="ck"></span></div>
+</div>
+<div class="ns">
+<div class="ns-t">第六章 · 生产与规模</div>
+<div class="ni" data-l="18"><span>&#127760;</span>分布式训练<span class="ck"></span></div>
+<div class="ni" data-l="19"><span>&#128260;</span>在线学习<span class="ck"></span></div>
+<div class="ni" data-l="20"><span>&#128187;</span>硬件与 GPU 加速<span class="ck"></span></div>
+</div>
+<div class="pb-c">
+<div class="pb-l"><span>总进度</span><span id="pTxt">0/21</span></div>
+<div class="pb"><div class="pb-f" id="pFill" style="width:0%"></div></div>
+</div>
+</nav>
+<main class="main"><div class="ct" id="ct"></div></main>
+</div>
+
+<script>
+// ===== SPTORCH CODE SNIPPETS =====
+var CODE={
+tensor:'pub struct Tensor {\n    shape: Vec<usize>,      // e.g. [2, 3]\n    strides: Vec<usize>,   // e.g. [3, 1]\n    data: Arc<RwLock<Storage>>,\n    dtype: DType,          // F32, F16, BF16\n    requires_grad: bool,\n    grad: Option<Tensor>,\n    node: Option<Node>,    // autograd graph\n}',
+addop:'// z = a + b\npub struct AddOp;\nimpl Op for AddOp {\n    fn backward(&self, grad_output: &Tensor)\n        -> Vec<Option<Tensor>> {\n        // dz/da = 1, dz/db = 1\n        vec![\n            Some(grad_output.clone()),\n            Some(grad_output.clone()),\n        ]\n    }\n}',
+mulop:'// z = a * b\npub struct MulOp { a: Tensor, b: Tensor }\nimpl Op for MulOp {\n    fn backward(&self, grad_output: &Tensor)\n        -> Vec<Option<Tensor>> {\n        // dz/da = b, dz/db = a\n        vec![\n            Some(mul(grad_output, &self.b)),\n            Some(mul(grad_output, &self.a)),\n        ]\n    }\n}',
+backward:'pub fn backward(&self) {\n    // Seed gradient: dL/dL = 1.0\n    let seed = Tensor::ones(self.shape());\n    // Topological sort (BFS)\n    let mut queue = VecDeque::new();\n    queue.push_back((self.clone(), seed));\n    while let Some((tensor, grad)) = queue.pop_front() {\n        tensor.accumulate_grad(&grad);\n        if let Some(node) = &tensor.node {\n            let grads = node.op.backward(&grad);\n            for (input, g) in node.inputs.iter()\n                                .zip(grads) {\n                if let Some(g) = g {\n                    queue.push_back((input.clone(), g));\n                }\n            }\n        }\n    }\n}',
+linear:'pub struct Linear {\n    pub weight: Tensor, // [out, in]\n    pub bias: Option<Tensor>,\n}\nimpl Module for Linear {\n    fn forward(&self, x: &Tensor) -> Tensor {\n        // y = x @ W^T + b\n        let out = matmul(x, &transpose(&self.weight));\n        match &self.bias {\n            Some(b) => broadcast_add(&out, b),\n            None => out,\n        }\n    }\n}',
+module:'pub trait Module: Send + Sync {\n    fn forward(&self, input: &Tensor) -> Tensor;\n    fn parameters(&self) -> Vec<Tensor>;\n}',
+lora:'pub struct LoRALinear {\n    pub base: Linear,       // frozen\n    pub lora_a: Tensor,     // [rank, in]\n    pub lora_b: Tensor,     // [out, rank]\n    pub alpha: f32,\n    pub rank: usize,\n}\nimpl Module for LoRALinear {\n    fn forward(&self, x: &Tensor) -> Tensor {\n        let base_out = self.base.forward(x);\n        let scale = self.alpha / self.rank as f32;\n        // delta = x @ A^T @ B^T * scale\n        let h = matmul(x, &transpose(&self.lora_a));\n        let delta = scale_op(\n            &matmul(&h, &transpose(&self.lora_b)),\n            scale\n        );\n        add(&base_out, &delta)\n    }\n}',
+mha:'pub struct MultiHeadAttention {\n    pub n_head: usize,\n    pub head_dim: usize,\n    pub wq: Linear, pub wk: Linear,\n    pub wv: Linear, pub wo: Linear,\n}\n// Scaled dot-product attention\nfn attention(q: &Tensor, k: &Tensor, v: &Tensor,\n             mask: Option<&Tensor>) -> Tensor {\n    let scale = 1.0 / (q.shape().last() as f32).sqrt();\n    let scores = scale_op(\n        &batch_matmul(q, &transpose(k)),\n        scale\n    );\n    let scores = match mask {\n        Some(m) => masked_fill(&scores, m, f32::NEG_INFINITY),\n        None => scores,\n    };\n    batch_matmul(&softmax(&scores), v)\n}',
+tfblock:'pub struct TransformerBlock {\n    pub ln1: LayerNorm,\n    pub attn: MultiHeadAttention,\n    pub ln2: LayerNorm,\n    pub ffn_up: Linear,   // d_model -> d_ff\n    pub ffn_down: Linear, // d_ff -> d_model\n}\n// Pre-norm architecture\nfn forward(&self, x: &Tensor) -> Tensor {\n    // x = x + Attention(LayerNorm(x))\n    let h = add(x, &self.attn.forward(\n        &self.ln1.forward(x)\n    ));\n    // x = x + FFN(LayerNorm(x))\n    let ff = self.ffn_down.forward(\n        &gelu(&self.ffn_up.forward(\n            &self.ln2.forward(&h)\n        ))\n    );\n    add(&h, &ff)\n}',
+gpt:'pub struct GPT {\n    pub token_emb: Embedding,  // [vocab, d_model]\n    pub pos_emb: Embedding,    // [seq_len, d_model]\n    pub blocks: Vec<TransformerBlock>,\n    pub ln_f: LayerNorm,\n    pub lm_head: Linear,       // [d_model, vocab]\n}\nfn forward_ids(&self, ids: &[usize]) -> Tensor {\n    let tok = self.token_emb.forward_indices(ids);\n    let pos = self.pos_emb.forward_indices(\n        &(0..ids.len()).collect::<Vec<_>>()\n    );\n    let mut h = add(&tok, &pos);\n    for block in &self.blocks {\n        h = block.forward_seq(&h);\n    }\n    self.lm_head.forward(&self.ln_f.forward(&h))\n}',
+sgd:'pub struct SGD {\n    params: Vec<Tensor>,\n    lr: f32,\n    momentum: f32,\n    velocities: Vec<Option<Vec<f32>>>,\n}\nfn step(&mut self) {\n    for (i, p) in self.params.iter().enumerate() {\n        let grad = p.grad();\n        // v = momentum * v + grad\n        let v = &mut self.velocities[i];\n        // param -= lr * v\n        p.update(|w| w - self.lr * v);\n    }\n}',
+adamw:'fn step(&mut self) {\n    self.t += 1;\n    for (i, p) in self.params.iter().enumerate() {\n        let grad = p.grad();\n        // First moment: m = β1*m + (1-β1)*g\n        m[j] = self.beta1 * m[j]\n             + (1.0 - self.beta1) * grad[j];\n        // Second moment: v = β2*v + (1-β2)*g²\n        v[j] = self.beta2 * v[j]\n             + (1.0 - self.beta2) * grad[j].powi(2);\n        // Bias correction\n        let m_hat = m[j] / (1.0 - self.beta1.powi(t));\n        let v_hat = v[j] / (1.0 - self.beta2.powi(t));\n        // Update: w -= lr * m_hat / (√v_hat + ε)\n        w[j] -= self.lr * m_hat\n              / (v_hat.sqrt() + self.eps);\n        // Weight decay (decoupled)\n        w[j] -= self.lr * self.wd * w[j];\n    }\n}',
+cosine:'pub struct CosineScheduler {\n    base_lr: f32,\n    warmup_steps: u32,\n    total_steps: u32,\n}\nfn get_lr(&self, step: u32) -> f32 {\n    if step < self.warmup_steps {\n        // Linear warmup\n        self.base_lr * step as f32\n            / self.warmup_steps as f32\n    } else {\n        // Cosine decay to 10% of base_lr\n        let progress = (step - self.warmup_steps) as f32\n            / (self.total_steps - self.warmup_steps) as f32;\n        let min_lr = 0.1 * self.base_lr;\n        min_lr + 0.5 * (self.base_lr - min_lr)\n            * (1.0 + (PI * progress).cos())\n    }\n}',
+bpe:'pub fn train(text: &str, target_vocab: usize) -> Self {\n    // Start with character-level tokens\n    let mut vocab: Vec<String> = chars.collect();\n    let mut ids: Vec<usize> = text.chars()\n        .map(|c| char_to_id[&c]).collect();\n    let mut merges = Vec::new();\n\n    while vocab.len() < target_vocab {\n        // Count adjacent pairs\n        let mut pairs = HashMap::new();\n        for w in ids.windows(2) {\n            *pairs.entry((w[0],w[1]))\n                  .or_insert(0) += 1;\n        }\n        // Find most frequent pair\n        let best = pairs.iter()\n            .max_by_key(|(_,c)| *c);\n        // Create new token = pair merged\n        let new_token = format!("{}{}",\n            vocab[best.0], vocab[best.1]);\n        let new_id = vocab.len();\n        vocab.push(new_token);\n        merges.push((best.0, best.1));\n        // Replace all occurrences in ids\n        ids = merge_pair(&ids, best.0, best.1, new_id);\n    }\n}',
+ewc:'pub struct EWC {\n    param_snapshot: Vec<Vec<f32>>,  // θ*\n    fisher_diag: Vec<Vec<f32>>,    // F_i\n    pub lambda: f32,\n}\n// Penalty = (λ/2) * Σ F_i * (θ_i - θ*_i)²\npub fn penalty(&self, params: &[Tensor]) -> f32 {\n    let mut total = 0.0;\n    for (i, p) in params.iter().enumerate() {\n        let data = p.contiguous_data();\n        for j in 0..data.len() {\n            let diff = data[j] - self.param_snapshot[i][j];\n            total += self.fisher_diag[i][j] * diff * diff;\n        }\n    }\n    self.lambda * 0.5 * total\n}',
+dbuf:'pub struct DoubleBufferParams {\n    buf_a: Vec<Tensor>,\n    buf_b: Vec<Tensor>,\n    a_is_active: Arc<AtomicBool>,\n}\n// Inference uses active, training updates shadow\npub fn active_params(&self) -> &[Tensor] {\n    if self.a_is_active.load(Ordering::Acquire)\n        { &self.buf_a } else { &self.buf_b }\n}\npub fn shadow_params(&self) -> &[Tensor] {\n    if self.a_is_active.load(Ordering::Acquire)\n        { &self.buf_b } else { &self.buf_a }\n}\n// Atomic swap after training step\npub fn swap(&self) {\n    self.a_is_active.fetch_xor(true, Ordering::AcqRel);\n}',
+allreduce:'pub fn ring_allreduce(local: &mut [Vec<f32>]) {\n    let n = local.len(); // world_size\n    let chunk_size = local[0].len() / n;\n    // Phase 1: Scatter-Reduce\n    for step in 0..n-1 {\n        for rank in 0..n {\n            let send_chunk = (rank + n - step) % n;\n            let recv_chunk = (rank + n - step - 1) % n;\n            // Accumulate received chunk\n            let start = recv_chunk * chunk_size;\n            for j in 0..chunk_size {\n                local[rank][start+j] +=\n                    local[(rank+n-1)%n][start+j];\n            }\n        }\n    }\n    // Phase 2: Allgather\n    // Each node broadcasts its reduced chunk\n    // Result: all nodes have identical sum\n}',
+hal:'pub trait Backend: Send + Sync {\n    fn name(&self) -> &str;\n    fn allocate(&self, bytes: usize) -> DevicePtr;\n    fn copy_h2d(&self, host: &[u8], dev: &DevicePtr);\n    fn copy_d2h(&self, dev: &DevicePtr, host: &mut [u8]);\n    fn synchronize(&self);\n}\npub trait KernelProvider: Send + Sync {\n    fn add_f32(&self, a: &DevicePtr, b: &DevicePtr,\n              out: &DevicePtr, n: usize);\n    fn matmul_f32(&self, a: &DevicePtr, b: &DevicePtr,\n                  out: &DevicePtr, m: usize, k: usize,\n                  n: usize);\n    // ... 20 kernel methods\n}',
+generate:'pub fn generate_with_sampling(\n    model: &GPT, prompt: &[usize],\n    max_tokens: usize, vocab_size: usize,\n    temperature: f32, top_k: usize,\n) -> Vec<usize> {\n    let mut tokens = prompt.to_vec();\n    for _ in 0..max_tokens {\n        let logits = model.forward_ids(&tokens);\n        // Apply temperature\n        let scaled = scale(&logits, 1.0 / temperature);\n        // Top-k filtering\n        let probs = top_k_filter(&softmax(&scaled), top_k);\n        // Sample from distribution\n        let next = sample(&probs);\n        tokens.push(next);\n    }\n    tokens\n}'
+};
+
+// ===== RUST SYNTAX HIGHLIGHTER =====
+function hl(key){
+  var s=CODE[key]||key;
+  s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s=s.replace(/(\/\/[^\n]*)/g,'<span class="rc">$1</span>');
+  s=s.replace(/("(?:[^"\\]|\\.)*")/g,'<span class="rs">$1</span>');
+  s=s.replace(/\b(fn|let|mut|pub|struct|impl|self|use|for|if|else|return|match|while|loop|break|continue|trait|enum|type|const|where|in|ref|move|async|await|true|false)\b/g,'<span class="rk">$1</span>');
+  s=s.replace(/\b(Vec|Option|Some|None|Result|Ok|Err|String|usize|f32|f64|i32|u32|bool|Self|Arc|RwLock|Box|HashMap|Tensor|Storage|DType|Device|Node|Module|Linear|Embedding|LayerNorm|VecDeque|AtomicBool|Ordering|DevicePtr)\b/g,'<span class="rt">$1</span>');
+  s=s.replace(/\b(\d+\.?\d*f?(?:32|64)?)\b/g,'<span class="rn">$1</span>');
+  return s;
+}
+function codeBlock(key,file){
+  return '<div class="cb"><div class="cb-h">'+file+'</div><pre><code>'+hl(key)+'</code></pre></div>';
+}
+
+// ===== STATE & LOCALSTORAGE =====
+var cur=0,done={},TOTAL=21,SKEY='llm_learn_v2';
+function saveP(){try{localStorage.setItem(SKEY,JSON.stringify({c:cur,d:done}));}catch(e){}}
+function loadP(){try{var s=localStorage.getItem(SKEY);if(s){var o=JSON.parse(s);cur=o.c||0;done=o.d||{};}}catch(e){}}
+
+// ===== CODE EXERCISE ENGINE =====
+// Exercise data: {id, blanks:[{answer,hint}], explain}
+var EX={};
+
+function exHTML(id,title,desc,codeParts,blanks,explain,hint){
+  // codeParts is array of strings, blanks inserted between them
+  // blanks is array of {answer,placeholder}
+  EX[id]={blanks:blanks.map(function(b){return b.answer;}),explain:explain};
+  var h='<div class="ex" id="ex_'+id+'"><h4>&#9998; 动手练习：'+title+'</h4><div class="ex-desc">'+desc+'</div>';
+  h+='<div class="ex-code"><div class="ex-code-h">补全代码</div><pre class="ex-pre">';
+  for(var i=0;i<codeParts.length;i++){
+    h+=codeParts[i].replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if(i<blanks.length){
+      h+='<span contenteditable="true" class="ex-blank" id="exb_'+id+'_'+i+'" data-idx="'+i+'" spellcheck="false" placeholder="'+blanks[i].placeholder+'">'+blanks[i].placeholder+'</span>';
+    }
+  }
+  h+='</pre></div>';
+  if(hint){h+='<div class="ex-hint" onclick="toggleHint(\''+id+'\')">&#128161; 点击查看提示</div><div class="ex-hint-text" id="exh_'+id+'">'+hint+'</div>';}
+  h+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="ex-run" onclick="checkEx(\''+id+'\')">&#9654; 验证答案</button></div>';
+  h+='<div class="ex-fb" id="exf_'+id+'"></div>';
+  h+='<div class="ex-output" id="exo_'+id+'"></div></div>';
+  return h;
+}
+
+function toggleHint(id){var el=document.getElementById('exh_'+id);if(el)el.classList.toggle('show');}
+
+function checkEx(id){
+  var ex=EX[id];if(!ex)return;
+  var allOk=true,results=[];
+  for(var i=0;i<ex.blanks.length;i++){
+    var el=document.getElementById('exb_'+id+'_'+i);if(!el)continue;
+    var val=el.textContent.trim().replace(/\s+/g,' ');
+    var ans=ex.blanks[i];
+    // Support multiple correct answers separated by |
+    var answers=ans.split('|');
+    var ok=false;
+    for(var j=0;j<answers.length;j++){if(val===answers[j].trim()){ok=true;break;}}
+    el.classList.remove('ex-ok','ex-no');
+    el.classList.add(ok?'ex-ok':'ex-no');
+    if(!ok)allOk=false;
+    results.push({ok:ok,got:val,expected:answers[0]});
+  }
+  var fb=document.getElementById('exf_'+id);
+  if(allOk){
+    fb.className='ex-fb show';fb.style.background='rgba(16,185,129,.1)';fb.style.color='#10b981';
+    fb.innerHTML='&#10003; 完全正确！'+ex.explain;
+    var out=document.getElementById('exo_'+id);
+    if(out){out.className='ex-output show';out.textContent='// 代码验证通过 ✓\n// '+ex.explain;}
+  }else{
+    fb.className='ex-fb show';fb.style.background='rgba(239,68,68,.1)';fb.style.color='#ef4444';
+    var wrong=results.filter(function(r){return !r.ok;});
+    fb.innerHTML='还有 '+wrong.length+' 处需要修正。';
+    if(wrong.length<=2){
+      wrong.forEach(function(r){
+        fb.innerHTML+='<br>你填的 <code style="color:var(--err)">'+r.got+'</code>，期望 <code style="color:var(--ok)">'+r.expected+'</code>';
+      });
+    }
+  }
+}
+
+// Helper to build exercise HTML inline in lessons
+function ex(id,title,desc,code,blanks,explain,hint){
+  return exHTML(id,title,desc,code,blanks,explain,hint);
+}
+
+
+// ===== LESSONS ARRAY =====
+var lessons=[
+// L0: 向量与矩阵
+function(){return{badge:"第一章 · 数学基础",title:"向量与矩阵",desc:"理解 AI 的基本语言",html:'<div class="sec"><h2>为什么要学向量和矩阵？</h2><div class="fey"><div class="lb">费曼式理解</div><p>想象你要描述一个人的特征：身高180cm、体重75kg、年龄25岁。这三个数字放在一起 <b>[180, 75, 25]</b> 就是一个<b>向量</b>。AI 就是用这种方式来"理解"世界的——把一切都变成数字列表。</p></div><p>在大模型中，每个文字、每张图片最终都会被转化成向量。理解向量，就是理解 AI 如何"看"世界。</p></div><div class="sec"><h2>什么是向量？</h2><p>向量就是一组有序的数字，既有方向又有长度。</p><div class="ana"><div class="lb">生活类比</div><p>导航说"向东走300米，再向北走400米"——这就是二维向量 [300, 400]。</p></div><div class="math">向量 a = [a₁, a₂, ..., aₙ]</div></div><div class="sec"><h2>互动：在平面上画向量</h2><div class="ia"><h4>拖动滑块，观察向量变化</h4><div class="cc"><canvas id="c0" width="360" height="360"></canvas></div><div class="sg"><label>X 分量：</label><input type="range" id="vx" min="-5" max="5" value="3" step="0.5"><span class="v" id="vxV">3</span></div><div class="sg"><label>Y 分量：</label><input type="range" id="vy" min="-5" max="5" value="2" step="0.5"><span class="v" id="vyV">2</span></div><div class="sg"><label>向量长度：</label><span class="v" id="vL" style="min-width:120px"></span></div></div></div><div class="sec"><h2>矩阵乘法计算器</h2><div class="ia"><h4>修改数字，观察乘法结果</h4><div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px"><div><div style="font-size:11px;color:var(--tx2);text-align:center;margin-bottom:4px">矩阵 A</div><div class="mc" style="grid-template-columns:repeat(2,1fr)"><input class="mi" id="a00" value="1"><input class="mi" id="a01" value="2"><input class="mi" id="a10" value="3"><input class="mi" id="a11" value="4"></div></div><span style="font-size:24px;color:var(--tx2)">×</span><div><div style="font-size:11px;color:var(--tx2);text-align:center;margin-bottom:4px">矩阵 B</div><div class="mc" style="grid-template-columns:repeat(2,1fr)"><input class="mi" id="b00" value="5"><input class="mi" id="b01" value="6"><input class="mi" id="b10" value="7"><input class="mi" id="b11" value="8"></div></div><span style="font-size:24px;color:var(--tx2)">=</span><div><div style="font-size:11px;color:var(--tx2);text-align:center;margin-bottom:4px">结果 C</div><div class="mr" style="grid-template-columns:repeat(2,1fr)"><div class="mrc" id="c00">19</div><div class="mrc" id="c01">22</div><div class="mrc" id="c10">43</div><div class="mrc" id="c11">50</div></div></div></div></div></div><div class="sec"><h2>在真实代码中：SPTorch 的 Tensor</h2><p>在 SPTorch 框架中，向量和矩阵统一用 <b>Tensor</b> 表示：</p>'+codeBlock("tensor","sptorch/crates/core-tensor/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>shape 描述维度，strides 描述内存布局，dtype 支持 F32/F16/BF16 混合精度。requires_grad 标记是否需要计算梯度——这就是自动微分的入口。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>请用自己的话解释：什么是向量？为什么 AI 需要向量？</h4><textarea class="ei" id="f0" placeholder="试着像给一个完全不懂技术的朋友解释..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(0)">提交我的理解</button></div><div class="er" id="fr0"></div></div></div><div class="qb"><h4>小测验</h4><p>向量 [3, 4] 的长度是多少？</p><button class="qo" onclick="cq(this,0)">A. 7</button><button class="qo" onclick="cq(this,1)">B. 5</button><button class="qo" onclick="cq(this,0)">C. 12</button><button class="qo" onclick="cq(this,0)">D. 3.5</button><div class="qf">√(3²+4²) = √25 = 5。勾股定理！AI 中向量长度常用来衡量特征强度。</div></div>'
++ex("e0","补全 Tensor 结构体","SPTorch 中 Tensor 是核心数据结构。补全缺失的字段：",["pub struct Tensor {\n    shape: Vec<usize>,\n    strides: Vec<usize>,\n    data: Arc<RwLock<Storage>>,\n    dtype: ","","\n    ","","","\n    grad: Option<Tensor>,\n    node: Option<Node>,\n}"],[{answer:"DType",placeholder:"???类型"},{answer:"requires_grad: bool",placeholder:"???"}],"dtype 决定精度（F32/F16/BF16），requires_grad 标记是否需要计算梯度。","DType 是数据类型枚举；第二个字段控制是否参与自动微分")+ex("e0b","矩阵乘法结果","手算：[1,2; 3,4] × [5,6; 7,8] 的结果矩阵 C 的四个元素是？",["C[0][0] = 1×5 + 2×7 = ","","\nC[0][1] = 1×6 + 2×8 = ","","\nC[1][0] = 3×5 + 4×7 = ","","\nC[1][1] = 3×6 + 4×8 = ",""],[{answer:"19",placeholder:"?"},{answer:"22",placeholder:"?"},{answer:"43",placeholder:"?"},{answer:"50",placeholder:"?"}],"矩阵乘法：C[i][j] = 第i行 · 第j列。这是神经网络最核心的运算。","行×列，对应元素相乘再求和")+''}},
+// L1: 函数与导数
+function(){return{badge:"第一章 · 数学基础",title:"函数与导数",desc:"理解变化的速度",html:'<div class="sec"><h2>为什么要学导数？</h2><div class="fey"><div class="lb">费曼式理解</div><p>AI 学习就是不断调整参数让"犯错程度"越来越小。导数告诉我们：<b>往哪个方向调整，犯错会减少最快</b>。没有导数，AI 就像蒙着眼睛找路。</p></div></div><div class="sec"><h2>什么是函数和导数？</h2><p>函数是"加工机器"：输入 → 输出。导数衡量函数在某点的<b>变化速度</b>。</p><div class="math">f(x) = x² → f\'(x) = 2x</div><div class="ana"><div class="lb">生活类比</div><p>开车时速度表显示的就是"位置对时间的导数"。导数 = 瞬间变化率。</p></div></div><div class="sec"><h2>互动：导数的几何意义</h2><div class="ia"><h4>拖动滑块，观察切线斜率（= 导数值）</h4><div class="cc"><canvas id="c1" width="500" height="300"></canvas></div><div class="sg"><label>x 位置：</label><input type="range" id="dx" min="-3" max="3" value="1" step="0.1"><span class="v" id="dxV">1</span></div><div class="sg"><label>导数值：</label><span class="v" id="dV" style="min-width:120px"></span></div><div class="kp"><div class="lb">关键洞察</div>导数为正→上升；为负→下降；为零→极值点。这就是 AI 找最优解的关键！</div></div></div><div class="sec"><h2>从导数到计算图</h2><div class="fey"><div class="lb">费曼式理解</div><p>在 SPTorch 中，每个运算（加法、乘法、矩阵乘）都会在"计算图"中留下记录。反向传播时，沿着图从输出往回走，用<b>链式法则</b>逐层计算每个参数的导数。</p></div>'+codeBlock("addop","sptorch/crates/core-ops/src/lib.rs")+'<p>加法的导数是 1（两个输入都原样传递梯度），乘法的导数是"对方的值"。这就是链式法则的具体实现。</p></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>导数在 AI 学习中起什么作用？</h4><textarea class="ei" id="f1" placeholder="想象你在教一个小朋友..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(1)">提交我的理解</button></div><div class="er" id="fr1"></div></div></div><div class="qb"><h4>小测验</h4><p>f(x) = x³ 在 x=2 处的导数是？</p><button class="qo" onclick="cq(this,0)">A. 6</button><button class="qo" onclick="cq(this,1)">B. 12</button><button class="qo" onclick="cq(this,0)">C. 8</button><button class="qo" onclick="cq(this,0)">D. 4</button><div class="qf">f\'(x) = 3x²，代入 x=2：3×4 = 12。</div></div>'
++ex("e1","补全加法算子的反向传播","z = a + b 时，∂z/∂a 和 ∂z/∂b 分别是多少？补全 backward：",["impl Op for AddOp {\n    fn backward(&self, grad: &Tensor)\n        -> Vec<Option<Tensor>> {\n        // dz/da = ?, dz/db = ?\n        vec![\n            Some(","","),\n            Some(","","),\n        ]\n    }\n}"],[{answer:"grad.clone()",placeholder:"???"},{answer:"grad.clone()",placeholder:"???"}],"加法的导数是 1，所以梯度原样传递给两个输入。这是最简单的反向传播规则。","加法 z=a+b 中，a 和 b 各自的偏导数都是 1，所以梯度直接传递")+ex("e1b","补全乘法算子的反向传播","z = a * b 时，∂z/∂a = b，∂z/∂b = a。补全 backward：",["impl Op for MulOp {\n    fn backward(&self, grad: &Tensor)\n        -> Vec<Option<Tensor>> {\n        vec![\n            Some(mul(grad, &self.","",")),\n            Some(mul(grad, &self.","",")),\n        ]\n    }\n}"],[{answer:"saved_b",placeholder:"???"},{answer:"saved_a",placeholder:"???"}],"乘法的链式法则：∂z/∂a = b，所以 a 的梯度 = grad × b（saved_b）。反过来 b 的梯度 = grad × a（saved_a）。","∂(a*b)/∂a = b，∂(a*b)/∂b = a")+''}},
+// L2: 概率与统计
+function(){return{badge:"第一章 · 数学基础",title:"概率与统计",desc:"不确定性的数学",html:'<div class="sec"><h2>为什么要学概率？</h2><div class="fey"><div class="lb">费曼式理解</div><p>ChatGPT 生成下一个字时，不是"确定"下一个字是什么，而是计算每个可能的字的<b>概率</b>，然后选一个概率高的。概率是 AI 做决策的核心语言。</p></div></div><div class="sec"><h2>Softmax 与温度</h2><div class="math">softmax(zᵢ) = e^(zᵢ/T) / Σⱼ e^(zⱼ/T)</div><p>温度 T 控制分布的"尖锐程度"。T→0 集中在最高分；T→∞ 趋于均匀。</p></div><div class="sec"><h2>互动：温度与概率分布</h2><div class="ia"><h4>调整温度，观察概率分布变化</h4><div class="cc"><canvas id="c2" width="500" height="250"></canvas></div><div class="sg"><label>温度 T：</label><input type="range" id="tmp" min="0.1" max="3" value="1" step="0.1"><span class="v" id="tmpV">1.0</span></div><div id="pW" style="text-align:center;margin-top:8px;font-size:13px"></div></div></div><div class="sec"><h2>在真实代码中：采样策略</h2><p>SPTorch 实现了三种文本生成策略：贪心（取最大概率）、温度采样、Top-k 过滤：</p>'+codeBlock("generate","sptorch/crates/nn/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>temperature 控制随机性，top_k 限制候选词数量。两者结合让生成既有创意又不离谱。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么 AI 生成文本需要概率，而不是直接给"正确答案"？</h4><textarea class="ei" id="f2" placeholder="用你自己的话..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(2)">提交我的理解</button></div><div class="er" id="fr2"></div></div></div><div class="qb"><h4>小测验</h4><p>降低温度参数会导致什么？</p><button class="qo" onclick="cq(this,1)">A. 输出更确定、更集中</button><button class="qo" onclick="cq(this,0)">B. 输出更随机、更多样</button><button class="qo" onclick="cq(this,0)">C. 模型运行更快</button><button class="qo" onclick="cq(this,0)">D. 模型使用更少内存</button><div class="qf">降低温度让概率分布更"尖锐"，高概率词获得更多权重。</div></div>'
++ex("e2","实现 Softmax","补全 softmax 的关键步骤（数值稳定版本）：",["fn softmax(logits: &[f32], T: f32) -> Vec<f32> {\n    let scaled: Vec<f32> = logits.iter()\n        .map(|x| x / T).collect();\n    let max = scaled.iter().cloned()\n        .fold(f32::NEG_INFINITY, f32::max);\n    let exps: Vec<f32> = scaled.iter()\n        .map(|x| (","",").exp()).collect();\n    let sum: f32 = exps.iter().","","();\n    exps.iter().map(|e| e / sum).collect()\n}"],[{answer:"x - max",placeholder:"???"},{answer:"sum",placeholder:"???"}],"先减去 max 防止数值溢出，再 exp，最后除以 sum 归一化。","数值稳定性：先减 max 再 exp；归一化：除以总和")+''}},
+// L3-L6: Chapter 2 Machine Learning
+function(){return{badge:"第二章 · 机器学习",title:"什么是机器学习",desc:"让机器从数据中学习",html:'<div class="sec"><h2>机器学习的本质</h2><div class="fey"><div class="lb">费曼式理解</div><p>传统编程：人类写规则，计算机执行。"如果温度>30度，就开空调"。<br><br>机器学习：人类给数据和答案，计算机<b>自己找规则</b>。给它1000天的温度记录，它自己学会什么时候该开。<br><br>本质：<b>从"编写规则"变成"学习规则"</b>。</p></div></div><div class="sec"><h2>三种学习方式</h2><div class="tabs" id="mlTabs"><div class="tab on" onclick="smt(0)">监督学习</div><div class="tab" onclick="smt(1)">无监督学习</div><div class="tab" onclick="smt(2)">强化学习</div></div><div id="mtC"><div class="ana"><div class="lb">监督学习 — 有老师指导</div><p>给模型"题目+答案"，让它学会推理。<br><b>例子：</b>10000张猫狗照片，每张标注"猫"或"狗"。<br><b>AI应用：</b>图像分类、翻译、GPT预训练（预测下一个词）</p></div></div></div><div class="sec"><h2>核心流程</h2><div class="ia"><div class="steps" id="mlS"><div class="stp on" onclick="sms(0)">1.准备数据</div><div class="stp" onclick="sms(1)">2.选择模型</div><div class="stp" onclick="sms(2)">3.训练</div><div class="stp" onclick="sms(3)">4.评估</div><div class="stp" onclick="sms(4)">5.部署</div></div><div id="mlSC" style="margin-top:12px"><div class="kp"><div class="lb">步骤 1：准备数据</div>收集数据并整理成模型能理解的格式。数据质量决定模型上限——"垃圾进，垃圾出"。</div></div></div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>机器学习和传统编程的核心区别是什么？</h4><textarea class="ei" id="f3" placeholder="用最简单的话..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(3)">提交我的理解</button></div><div class="er" id="fr3"></div></div></div><div class="qb"><h4>小测验</h4><p>ChatGPT 的预训练属于哪种学习方式？</p><button class="qo" onclick="cq(this,1)">A. 监督学习（预测下一个词）</button><button class="qo" onclick="cq(this,0)">B. 无监督学习</button><button class="qo" onclick="cq(this,0)">C. 强化学习</button><button class="qo" onclick="cq(this,0)">D. 以上都不是</button><div class="qf">GPT 预训练是自监督学习（监督学习的一种）：预测下一个词，"答案"就是文本中实际的下一个词。</div></div>'
++ex("e3","判断学习类型","给每种场景选择正确的学习类型：",["// 给模型10000张标注猫/狗的图片\n学习类型：","","\n\n// AI下围棋，赢了+1分输了-1分\n学习类型：","","\n\n// 给模型大量新闻，自动发现主题\n学习类型：",""],[{answer:"监督学习",placeholder:"???"},{answer:"强化学习",placeholder:"???"},{answer:"无监督学习",placeholder:"???"}],"有标签=监督，有奖惩=强化，无标签自己发现规律=无监督。","有答案→监督；有奖励→强化；没标签→无监督")+''}},
+function(){return{badge:"第二章 · 机器学习",title:"线性回归",desc:"最简单的预测模型",html:'<div class="sec"><h2>画一条最佳直线</h2><div class="fey"><div class="lb">费曼式理解</div><p>线性回归就是<b>画一条最佳直线</b>穿过数据点。虽然简单，但它包含了 ML 最核心的思想：定义模型 → 定义误差 → 最小化误差。</p></div><div class="math">y&#770; = wx + b</div><p><b>w</b>（权重）控制斜率，<b>b</b>（偏置）控制上下位置。</p></div><div class="sec"><h2>互动：拟合直线</h2><div class="ia"><h4>调整 w 和 b，让直线贴近数据点</h4><div class="cc"><canvas id="c4" width="500" height="300"></canvas></div><div class="sg"><label>权重 w：</label><input type="range" id="lw" min="-3" max="3" value="0.5" step="0.1"><span class="v" id="lwV">0.5</span></div><div class="sg"><label>偏置 b：</label><input type="range" id="lb2" min="-3" max="3" value="0" step="0.1"><span class="v" id="lbV">0.0</span></div><div class="sg"><label>损失(MSE)：</label><span class="v" id="lL" style="min-width:120px;color:var(--warn)"></span></div></div></div><div class="sec"><h2>在真实代码中：SPTorch 的 Linear 层</h2><p>线性回归推广到多维就是神经网络的 Linear 层：</p>'+codeBlock("linear","sptorch/crates/nn/src/lib.rs")+'<p>y = x @ W^T + b，和线性回归完全一样，只是从一维推广到了多维矩阵运算。</p></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>什么是损失函数？为什么 ML 需要它？</h4><textarea class="ei" id="f4" placeholder="想象你在教一个朋友..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(4)">提交我的理解</button></div><div class="er" id="fr4"></div></div></div><div class="qb"><h4>小测验</h4><p>增大 w 的值，直线会怎样？</p><button class="qo" onclick="cq(this,1)">A. 变得更陡</button><button class="qo" onclick="cq(this,0)">B. 向上平移</button><button class="qo" onclick="cq(this,0)">C. 变得更平</button><button class="qo" onclick="cq(this,0)">D. 不变</button><div class="qf">w 是斜率，增大 w 让直线更陡。b 才控制上下平移。</div></div>'
++ex("e4","补全 Linear 层的 forward","线性层的前向计算：y = x @ W^T + b",["impl Module for Linear {\n    fn forward(&self, x: &Tensor) -> Tensor {\n        let out = matmul(x, &","","(&self.weight));\n        match &self.bias {\n            Some(b) => ","","(&out, b),\n            None => out,\n        }\n    }\n}"],[{answer:"transpose",placeholder:"???"},{answer:"broadcast_add",placeholder:"???"}],"matmul 需要转置权重矩阵（W^T），有偏置时用 broadcast_add 加上。","y = x @ W^T + b，注意 W 存储为 [out, in]，需要转置")+ex("e4b","计算 MSE 损失","给定真实值 y=[2,4,6] 和预测值 p=[1,5,5]，手算 MSE：",["y = [2, 4, 6]\np = [1, 5, 5]\n\n误差 = [(2-1)², (4-5)², (6-5)²]\n     = [1, 1, 1]\n\nMSE = (1 + 1 + 1) / 3 = ",""],[{answer:"1",placeholder:"?"}],"MSE = 平均平方误差 = Σ(y-p)²/n = 3/3 = 1","每个误差的平方：1²=1, (-1)²=1, 1²=1，平均=1")+''}},
+function(){return{badge:"第二章 · 机器学习",title:"梯度下降",desc:"AI 如何自动学习",html:'<div class="sec"><h2>核心算法</h2><div class="fey"><div class="lb">费曼式理解</div><p>蒙着眼睛站在山上，想走到谷底。策略：<b>用脚感受倾斜方向，朝下坡迈一步</b>。重复直到到达谷底。<br><br>"感受倾斜" = 计算梯度，"迈一步" = 更新参数。</p></div><div class="math">w_new = w_old - α × ∂Loss/∂w</div></div><div class="sec"><h2>互动：梯度下降可视化</h2><div class="ia"><h4>观察小球沿损失曲面滚到最低点</h4><div class="cc"><canvas id="c5" width="500" height="300"></canvas></div><div class="sg"><label>学习率 α：</label><input type="range" id="glr" min="0.01" max="0.5" value="0.1" step="0.01"><span class="v" id="glrV">0.10</span></div><div class="sg"><label>起始位置：</label><input type="range" id="gst" min="-4" max="4" value="3.5" step="0.1"><span class="v" id="gstV">3.5</span></div><div class="bg"><button class="btn btn-p" onclick="sgd()">开始下降</button><button class="btn btn-s" onclick="rgd()">重置</button></div><div id="gdI" style="margin-top:10px;font-size:12px;color:var(--tx2)"></div></div></div><div class="sec"><h2>学习率调度：余弦退火</h2><p>实践中学习率不是固定的，而是先升后降：</p>'+codeBlock("cosine","sptorch/crates/optim/src/lib.rs")+'<div class="ia"><h4>互动：余弦学习率曲线</h4><div class="cc"><canvas id="c5b" width="500" height="200"></canvas></div><div class="sg"><label>预热步数：</label><input type="range" id="cwarm" min="0" max="500" value="200" step="10"><span class="v" id="cwarmV">200</span></div><div class="sg"><label>总步数：</label><input type="range" id="ctotal" min="500" max="5000" value="2000" step="100"><span class="v" id="ctotalV">2000</span></div></div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>梯度下降是什么？学习率为什么重要？</h4><textarea class="ei" id="f5" placeholder="用蒙眼下山的比喻..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(5)">提交我的理解</button></div><div class="er" id="fr5"></div></div></div><div class="qb"><h4>小测验</h4><p>梯度为负数时，参数应该怎么调？</p><button class="qo" onclick="cq(this,0)">A. 减小</button><button class="qo" onclick="cq(this,1)">B. 增大</button><button class="qo" onclick="cq(this,0)">C. 不变</button><button class="qo" onclick="cq(this,0)">D. 随机</button><div class="qf">w_new = w_old - α×(负数) = w_old + 正数，参数增大。梯度为负说明"往右走是下坡"。</div></div>'
++ex("e5","手算梯度下降","w=3, 学习率α=0.1, 损失函数 L(w)=w²，梯度 dL/dw=2w。计算一步更新：",["w_old = 3\ngradient = 2 × 3 = ","","\nw_new = 3 - 0.1 × 6 = ",""],[{answer:"6",placeholder:"?"},{answer:"2.4",placeholder:"?"}],"梯度=2×3=6，新参数=3-0.1×6=2.4。每步都朝损失减小的方向走。","dL/dw = 2w = 2×3；w_new = w_old - α × gradient")+ex("e5b","补全余弦学习率调度","补全 warmup 和 cosine decay 的关键逻辑：",["fn get_lr(&self, step: u32) -> f32 {\n    if step < self.warmup_steps {\n        // Linear warmup\n        self.base_lr * step as f32\n            / ","","  as f32\n    } else {\n        // Cosine decay\n        let progress = (step - self.warmup_steps) as f32\n            / (self.total_steps - self.warmup_steps) as f32;\n        let min_lr = 0.1 * self.base_lr;\n        min_lr + 0.5 * (self.base_lr - min_lr)\n            * (1.0 + (PI * ","",").cos())\n    }\n}"],[{answer:"self.warmup_steps",placeholder:"???"},{answer:"progress",placeholder:"???"}],"warmup 阶段线性增长（除以 warmup_steps），之后按 cos(π×progress) 衰减。","warmup 除以总预热步数；cosine 用进度比例")+''}},
+function(){return{badge:"第二章 · 机器学习",title:"分类与逻辑回归",desc:"从预测数值到预测类别",html:'<div class="sec"><h2>从回归到分类</h2><div class="fey"><div class="lb">费曼式理解</div><p>线性回归预测<b>数值</b>。但很多时候需要预测<b>类别</b>：是不是垃圾邮件？<br><br>逻辑回归：先算一个分数，用 <b>Sigmoid</b> 压缩到 0~1 变成"概率"。>0.5 判"是"。</p></div><div class="math">σ(z) = 1 / (1 + e^(-z))</div></div><div class="sec"><h2>互动：Sigmoid 可视化</h2><div class="ia"><h4>观察 Sigmoid 如何将任意数值映射到 0~1</h4><div class="cc"><canvas id="c6" width="500" height="280"></canvas></div><div class="sg"><label>输入 z：</label><input type="range" id="sz" min="-8" max="8" value="0" step="0.1"><span class="v" id="szV">0.0</span></div><div class="sg"><label>输出 σ(z)：</label><span class="v" id="soV" style="min-width:120px"></span></div></div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么分类问题不能直接用线性回归？</h4><textarea class="ei" id="f6" placeholder="试着用自己的话..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(6)">提交我的理解</button></div><div class="er" id="fr6"></div></div></div><div class="qb"><h4>小测验</h4><p>Sigmoid 的输出范围是？</p><button class="qo" onclick="cq(this,0)">A. -1 到 1</button><button class="qo" onclick="cq(this,1)">B. 0 到 1</button><button class="qo" onclick="cq(this,0)">C. -∞ 到 +∞</button><button class="qo" onclick="cq(this,0)">D. 0 到 +∞</button><div class="qf">Sigmoid 输出永远在 (0,1) 之间，非常适合表示概率。</div></div>'
++ex("e6","手算 Sigmoid","计算 σ(0) 和 σ(很大的正数)：",["σ(z) = 1 / (1 + e^(-z))\n\nσ(0) = 1 / (1 + e^0) = 1 / (1 + 1) = ","","\n\n当 z → +∞ 时，e^(-z) → 0\nσ(+∞) = 1 / (1 + 0) = ",""],[{answer:"0.5",placeholder:"?"},{answer:"1",placeholder:"?"}],"σ(0)=0.5（完全不确定），z越大越接近1（越确定是正类）。","e^0=1，所以分母=2；z很大时e^(-z)趋近0")+''}},
+// L7-L9: Chapter 3 Deep Learning
+function(){return{badge:"第三章 · 深度学习",title:"神经网络基础",desc:"模拟大脑的计算模型",html:'<div class="sec"><h2>从逻辑回归到神经网络</h2><div class="fey"><div class="lb">费曼式理解</div><p>逻辑回归只能画一条直线分类。神经网络的思路：<b>把很多个简单的"逻辑回归"堆叠起来</b>，每一层提取更高级的特征。层层叠加，解决复杂问题。</p></div><div class="math">输出 = 激活函数(w₁x₁ + w₂x₂ + ... + b)</div></div><div class="sec"><h2>互动：构建神经网络</h2><div class="ia"><h4>调整网络结构</h4><div class="cc"><canvas id="c7" width="520" height="320"></canvas></div><div class="sg"><label>隐藏层数：</label><input type="range" id="nl" min="1" max="4" value="2" step="1"><span class="v" id="nlV">2</span></div><div class="sg"><label>每层神经元：</label><input type="range" id="nn" min="2" max="6" value="4" step="1"><span class="v" id="nnV">4</span></div></div></div><div class="sec"><h2>在真实代码中：Module 接口</h2><p>SPTorch 中所有网络层都实现 Module trait：</p>'+codeBlock("module","sptorch/crates/nn/src/lib.rs")+'<p>forward() 定义前向计算，parameters() 返回所有可训练参数。这个简洁的接口让任何层都能组合使用。</p><div class="kp"><div class="lb">关键洞察</div>"深度"指层数多。GPT-4 有 100+ 层！层数越多，能学到的特征越抽象。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么单个神经元不够用，需要组成网络？</h4><textarea class="ei" id="f7" placeholder="试着用画画来类比..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(7)">提交我的理解</button></div><div class="er" id="fr7"></div></div></div><div class="qb"><h4>小测验</h4><p>"深度学习"中的"深度"指什么？</p><button class="qo" onclick="cq(this,0)">A. 数据量大</button><button class="qo" onclick="cq(this,0)">B. 学习时间长</button><button class="qo" onclick="cq(this,1)">C. 网络层数多</button><button class="qo" onclick="cq(this,0)">D. 理解深刻</button><div class="qf">"深度"就是层数。更多层 = 更抽象的特征表示。</div></div>'
++ex("e7","补全 Module trait","SPTorch 中所有网络层都实现这个接口：",["pub trait Module: Send + Sync {\n    fn ","","(&self, input: &Tensor) -> Tensor;\n    fn ","","(&self) -> Vec<Tensor>;\n}"],[{answer:"forward",placeholder:"???"},{answer:"parameters",placeholder:"???"}],"forward 定义前向计算，parameters 返回所有可训练参数。简洁的接口让任何层都能组合。","一个做计算，一个返回参数列表")+ex("e7b","计算参数量","一个 Linear 层 [768, 3072] 有多少参数？（含 bias）",["weight: [768, 3072] → 768 × 3072 = ","","个参数\nbias: [3072] → 3072 个参数\n总计：","","个参数"],[{answer:"2359296",placeholder:"???"},{answer:"2362368",placeholder:"???"}],"weight 参数 = 768×3072 = 2,359,296，加上 bias 3072 = 2,362,368。一个 GPT-2 有 12 层这样的 FFN！","768×3072=2359296；加上 bias 3072")+''}},
+function(){return{badge:"第三章 · 深度学习",title:"激活函数与反向传播",desc:"让网络学会学习",html:'<div class="sec"><h2>两个关键问题</h2><div class="fey"><div class="lb">费曼式理解</div><p><b>问题1：</b>没有激活函数，不管堆多少层，本质还是线性变换。激活函数引入"非线性"，让网络能画曲线。<br><br><b>问题2：</b>成千上万参数怎么调？反向传播用链式法则，从输出往回算每个参数的梯度。</p></div></div><div class="sec"><h2>常见激活函数</h2><div class="ia"><div class="tabs" id="actT"><div class="tab on" onclick="saf(0)">ReLU</div><div class="tab" onclick="saf(1)">Sigmoid</div><div class="tab" onclick="saf(2)">Tanh</div><div class="tab" onclick="saf(3)">GELU</div></div><div class="cc"><canvas id="c8" width="500" height="250"></canvas></div><div id="afI" style="font-size:12px;color:var(--tx2);margin-top:6px"></div></div></div><div class="sec"><h2>反向传播演示</h2><div class="ia"><h4>观察梯度如何从输出层传回输入层</h4><div class="cc"><canvas id="c8b" width="500" height="280"></canvas></div><div class="bg"><button class="btn btn-p" onclick="abp()">播放反向传播</button><button class="btn btn-s" onclick="rbp()">重置</button></div><div id="bpI" style="margin-top:8px;font-size:12px;color:var(--tx2)"></div></div></div><div class="sec"><h2>在真实代码中：乘法的反向传播</h2>'+codeBlock("mulop","sptorch/crates/core-ops/src/lib.rs")+'<p>乘法 z=a*b 的梯度：∂z/∂a = b，∂z/∂b = a。所以反向传播时需要保存前向计算的输入值。</p></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么神经网络需要激活函数？</h4><textarea class="ei" id="f8" placeholder="用最直觉的方式..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(8)">提交我的理解</button></div><div class="er" id="fr8"></div></div></div><div class="qb"><h4>小测验</h4><p>ReLU 的定义是？</p><button class="qo" onclick="cq(this,1)">A. f(x) = max(0, x)</button><button class="qo" onclick="cq(this,0)">B. f(x) = 1/(1+e^(-x))</button><button class="qo" onclick="cq(this,0)">C. f(x) = x²</button><button class="qo" onclick="cq(this,0)">D. f(x) = |x|</button><div class="qf">ReLU = max(0,x)，负数变0，正数不变。简单高效。GPT 用的 GELU 是其平滑版本。</div></div>'
++ex("e8","补全 ReLU 的反向传播","ReLU forward: y=max(0,x)。backward 时梯度怎么传？",["impl Op for ReluOp {\n    fn backward(&self, grad: &Tensor)\n        -> Vec<Option<Tensor>> {\n        let input = self.saved_input.data();\n        let g = grad.data();\n        let da: Vec<f32> = input.iter()\n            .zip(g.iter())\n            .map(|(x, g)| {\n                if *x > 0.0 { ","","} \n                else { ","","}\n            }).collect();\n        vec![Some(Tensor::new(da, grad.shape()))]\n    }\n}"],[{answer:"*g",placeholder:"???"},{answer:"0.0",placeholder:"???"}],"x>0 时梯度原样通过（*g），x<=0 时梯度为 0。ReLU 像一个阀门：正数全开，负数关闭。","ReLU 的导数：x>0 时为 1（乘以 g），x<=0 时为 0")+ex("e8b","链式法则手算","y = relu(2x + 1)，x=1 时求 dy/dx：",["// 前向：z = 2×1 + 1 = 3，y = relu(3) = 3\n// 反向（链式法则）：\n// dy/dz = relu导数 = ","","  (因为 z=3 > 0)\n// dz/dx = ","","\n// dy/dx = dy/dz × dz/dx = 1 × 2 = ","",""],[{answer:"1",placeholder:"?"},{answer:"2",placeholder:"?"},{answer:"2",placeholder:"?"}],"链式法则：dy/dx = dy/dz × dz/dx。relu 在正区间导数为 1，线性部分导数为 2。","relu(z) 在 z>0 时导数=1；2x+1 对 x 的导数=2")+''}},
+function(){return{badge:"第三章 · 深度学习",title:"词嵌入与表示学习",desc:"让计算机理解文字",html:'<div class="sec"><h2>计算机如何理解文字？</h2><div class="fey"><div class="lb">费曼式理解</div><p>计算机只认识数字。最笨的方法：给每个词编号（猫=1，狗=2）。但这样"猫"和"狗"的关系跟"猫"和"鱼"一样远。<br><br>聪明的方法：<b>词嵌入</b>——把每个词变成向量，意思相近的词距离也近。</p></div><div class="math">向量("国王") - 向量("男人") + 向量("女人") ≈ 向量("女王")</div></div><div class="sec"><h2>互动：词向量空间</h2><div class="ia"><h4>观察词语在二维空间中的分布</h4><div class="cc"><canvas id="c9" width="500" height="350"></canvas></div><div class="tabs" id="emT"><div class="tab on" onclick="seg(0)">动物</div><div class="tab" onclick="seg(1)">国家-首都</div><div class="tab" onclick="seg(2)">情感</div></div></div></div><div class="sec"><h2>从词嵌入到 BPE 分词</h2><div class="kp"><div class="lb">关键洞察</div>词嵌入是静态的——"苹果"不管在"吃苹果"还是"苹果公司"中向量都一样。Transformer 通过注意力机制让表示根据上下文动态变化。<br><br>另一个问题：词表太大怎么办？BPE 分词把词拆成子词片段，用有限词表覆盖无限词汇。这是第五章的内容。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么不能简单给每个词编号，而要用向量？</h4><textarea class="ei" id="f9" placeholder="想想编号和向量的区别..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(9)">提交我的理解</button></div><div class="er" id="fr9"></div></div></div><div class="qb"><h4>小测验</h4><p>词嵌入的核心思想是？</p><button class="qo" onclick="cq(this,0)">A. 给每个词唯一编号</button><button class="qo" onclick="cq(this,1)">B. 映射到向量空间，语义相近距离近</button><button class="qo" onclick="cq(this,0)">C. 翻译成英文</button><button class="qo" onclick="cq(this,0)">D. 统计出现次数</button><div class="qf">词嵌入的核心是"分布式表示"：用稠密向量表示词，语义相近的词在向量空间中距离也近。</div></div>'
++ex("e9","词向量运算","如果 king=[0.8,0.2], man=[0.5,0.1], woman=[0.5,0.7]，计算 king - man + woman：",["king - man + woman\n= [0.8-0.5+0.5, 0.2-0.1+0.7]\n= [","",", ","","]  // ≈ queen!"],[{answer:"0.8",placeholder:"?"},{answer:"0.8",placeholder:"?"}],"向量运算保留了语义关系：king-man+woman ≈ queen。这证明词嵌入编码了丰富的语义信息。","逐元素计算：0.8-0.5+0.5=0.8, 0.2-0.1+0.7=0.8")+''}},
+// L10-L13: Chapter 4 LLM Architecture
+function(){return{badge:"第四章 · LLM 架构",title:"注意力机制",desc:"AI 如何学会关注重要信息",html:'<div class="sec"><h2>为什么需要注意力？</h2><div class="fey"><div class="lb">费曼式理解</div><p>"小明把球传给了小红，<b>她</b>很开心。"你立刻知道"她"指"小红"。你的大脑自动<b>关注</b>了最相关的词。注意力机制让 AI 也学会这种能力。</p></div></div><div class="sec"><h2>Query, Key, Value</h2><div class="ana"><div class="lb">图书馆类比</div><p><b>Query：</b>你想找什么？<br><b>Key：</b>每本书的标签<br><b>Value：</b>书的内容<br><br>注意力 = 用 Query 匹配 Key，匹配度高的 Value 多读一些。</p></div><div class="math">Attention(Q,K,V) = softmax(QK&#7488;/√d) × V</div></div><div class="sec"><h2>互动：注意力权重可视化</h2><div class="ia"><h4>点击一个词，查看它"关注"其他词的程度</h4><div id="atD" style="margin:12px 0;text-align:center"></div><div class="cc"><canvas id="c10" width="500" height="180"></canvas></div></div></div><div class="sec"><h2>在真实代码中：多头注意力</h2>'+codeBlock("mha","sptorch/crates/nn/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>多头注意力像派出多个侦探，每个关注不同线索（语法、指代、位置）。GPT-4 有 100+ 个注意力头！</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>Q、K、V 分别是什么？</h4><textarea class="ei" id="f10" placeholder="用图书馆或其他比喻..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(10)">提交我的理解</button></div><div class="er" id="fr10"></div></div></div><div class="qb"><h4>小测验</h4><p>为什么要除以 √d？</p><button class="qo" onclick="cq(this,0)">A. 让计算更快</button><button class="qo" onclick="cq(this,1)">B. 防止点积过大导致梯度消失</button><button class="qo" onclick="cq(this,0)">C. 减少参数量</button><button class="qo" onclick="cq(this,0)">D. 没有特别原因</button><div class="qf">维度大时点积值也大，softmax 输出接近 one-hot（梯度几乎为零）。除以 √d 让梯度保持合理。</div></div>'
++ex("e10","补全注意力公式","补全 scaled dot-product attention 的关键步骤：",["fn attention(q: &Tensor, k: &Tensor, v: &Tensor)\n    -> Tensor {\n    let scale = 1.0 / (q.dim() as f32).","","();\n    let scores = scale_op(\n        &batch_matmul(q, &","","(k)),\n        scale\n    );\n    batch_matmul(&softmax(&scores), ","",")\n}"],[{answer:"sqrt",placeholder:"???"},{answer:"transpose",placeholder:"???"},{answer:"v",placeholder:"???"}],"缩放因子用 sqrt(d)；Q 和 K^T 做点积得到注意力分数；softmax 后乘以 V 得到输出。","缩放用平方根；K 需要转置；最后加权的是 V")+ex("e10b","手算注意力权重","Q=[1,0], K=[[1,0],[0,1]], 计算注意力分数（不缩放）：",["scores = Q @ K^T\n= [1,0] @ [[1,0],[0,1]]^T\n= [1×1+0×0, 1×0+0×1]\n= [","",", ","","]\n\nsoftmax([1, 0]) ≈ [0.73, 0.27]\n// Q 更关注第一个 Key（相似度更高）"],[{answer:"1",placeholder:"?"},{answer:"0",placeholder:"?"}],"Q 和 K1 的点积=1（方向相同），Q 和 K2 的点积=0（正交）。softmax 后第一个权重更大。","点积：对应元素相乘再求和")+''}},
+function(){return{badge:"第四章 · LLM 架构",title:"Transformer 架构",desc:"改变世界的模型架构",html:'<div class="sec"><h2>Transformer：一切的基础</h2><div class="fey"><div class="lb">费曼式理解</div><p>之前的 RNN 像<b>一个字一个字地读</b>，读到后面忘了前面。Transformer <b>同时看到所有字</b>，用注意力判断哪些字有关系。<br><br>RNN = 一个人慢慢读书；Transformer = 一群人同时读不同章节然后讨论。</p></div></div><div class="sec"><h2>互动：Transformer 组件</h2><div class="ia"><h4>点击每个组件了解作用</h4><div class="cc"><canvas id="c11" width="500" height="420"></canvas></div><div id="tfI" style="margin-top:8px;font-size:12px;color:var(--tx2);min-height:50px">点击组件查看详情</div></div></div><div class="sec"><h2>在真实代码中：Pre-Norm TransformerBlock</h2><p>SPTorch 使用 Pre-Norm 架构（先归一化再计算，训练更稳定）：</p>'+codeBlock("tfblock","sptorch/crates/nn/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>残差连接 x = x + sublayer(x) 确保信息不丢失。即使某层没学到有用的东西，原始信息也能通过。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>Transformer 相比 RNN 最大的优势是什么？</h4><textarea class="ei" id="f11" placeholder="想想并行处理和长距离依赖..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(11)">提交我的理解</button></div><div class="er" id="fr11"></div></div></div><div class="qb"><h4>小测验</h4><p>"Attention Is All You Need"想表达什么？</p><button class="qo" onclick="cq(this,1)">A. 只用注意力就能构建强大模型</button><button class="qo" onclick="cq(this,0)">B. 注意力是人类最重要的能力</button><button class="qo" onclick="cq(this,0)">C. 模型只需要很少数据</button><button class="qo" onclick="cq(this,0)">D. AI 已超越人类</button><div class="qf">不需要 RNN/CNN，仅靠注意力就能取得最好效果，而且可以并行计算。</div></div>'
++ex("e11","补全 TransformerBlock","Pre-Norm 架构：先归一化再计算，残差连接保留原始信息：",["fn forward(&self, x: &Tensor) -> Tensor {\n    // x = x + Attention(LayerNorm(x))\n    let h = add(x, &self.attn.forward(\n        &self.","",".forward(x)\n    ));\n    // x = x + FFN(LayerNorm(x))\n    let ff = self.ffn_down.forward(\n        &","","(&self.ffn_up.forward(\n            &self.ln2.forward(&h)\n        ))\n    );\n    ","","(&h, &ff)\n}"],[{answer:"ln1",placeholder:"???"},{answer:"gelu",placeholder:"???"},{answer:"add",placeholder:"???"}],"Pre-Norm：先 LayerNorm 再计算子层。残差连接 add(x, sublayer(x)) 确保信息不丢失。GELU 是 GPT 使用的激活函数。","第一个归一化层是 ln1；FFN 中间用 GELU 激活；残差连接用 add")+''}},
+function(){return{badge:"第四章 · LLM 架构",title:"GPT 与文本生成",desc:"从 Transformer 到 ChatGPT",html:'<div class="sec"><h2>GPT 是什么？</h2><div class="fey"><div class="lb">费曼式理解</div><p><b>GPT = Generative Pre-trained Transformer</b><br><br>核心任务极其简单：<b>预测下一个词</b>。当模型足够大、数据足够多时，涌现出惊人的智能。</p></div></div><div class="sec"><h2>互动：模拟文本生成</h2><div class="ia"><h4>观察 GPT 如何逐词生成</h4><div style="background:var(--bg);border-radius:8px;padding:14px;margin:10px 0;min-height:50px"><span style="color:var(--acc)">输入：</span><span id="gO">从前有一座山</span><span class="typing" id="gC">|</span></div><div id="gP" style="margin:10px 0"></div><div class="bg"><button class="btn btn-p" onclick="gn()">生成下一个词</button><button class="btn btn-s" onclick="gr()">重置</button></div></div></div><div class="sec"><h2>在真实代码中：GPT 模型</h2>'+codeBlock("gpt","sptorch/crates/nn/src/lib.rs")+'<p>token_emb + pos_emb → N 个 TransformerBlock → LayerNorm → lm_head。就这么简单的结构，堆叠到 100+ 层就是 GPT-4。</p></div><div class="sec"><h2>规模定律与涌现</h2><div class="kp"><div class="lb">关键洞察</div>模型性能随参数量、数据量、计算量<b>可预测地</b>提升。小模型只会补全文本，大模型突然"涌现"出推理、编程、翻译等能力——量变引起质变。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么"预测下一个词"就能展现复杂智能？</h4><textarea class="ei" id="f12" placeholder="想想预测下一个词需要什么能力..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(12)">提交我的理解</button></div><div class="er" id="fr12"></div></div></div><div class="qb"><h4>小测验</h4><p>GPT 生成文本的方式是？</p><button class="qo" onclick="cq(this,0)">A. 一次性生成整段</button><button class="qo" onclick="cq(this,1)">B. 每次预测一个词，逐步生成</button><button class="qo" onclick="cq(this,0)">C. 从数据库检索</button><button class="qo" onclick="cq(this,0)">D. 随机组合</button><div class="qf">自回归方式：每次预测下一个词，加入文本，再预测下一个...循环往复。</div></div>'
++ex("e12","补全 GPT 前向传播","GPT = token嵌入 + 位置嵌入 → N层Transformer → LayerNorm → 输出头：",["fn forward_ids(&self, ids: &[usize]) -> Tensor {\n    let tok = self.token_emb.forward_indices(ids);\n    let pos = self.pos_emb.forward_indices(\n        &(0..ids.len()).collect::<Vec<_>>()\n    );\n    let mut h = ","","(&tok, &pos);\n    for block in &self.blocks {\n        h = block.","","(&h);\n    }\n    self.lm_head.forward(&self.","",".forward(&h))\n}"],[{answer:"add",placeholder:"???"},{answer:"forward_seq|forward",placeholder:"???"},{answer:"ln_f",placeholder:"???"}],"token嵌入+位置嵌入相加，逐层通过TransformerBlock，最后LayerNorm再投影到词表。","嵌入相加用 add；每个 block 做 forward；最后一层归一化是 ln_f")+ex("e12b","计算 GPT-2 参数量","GPT-2 small: d_model=768, n_layer=12, vocab=50257, seq=1024。估算参数量：",["token_emb: 50257 × 768 = ","","M\npos_emb: 1024 × 768 = 0.8M\n每层 Transformer ≈ 4 × d² + 2 × 4d² = 12d²\n= 12 × 768² ≈ 7.1M\n12层 = 85.2M\n总计 ≈ ","","M"],[{answer:"38.6|38.5|39",placeholder:"??M"},{answer:"124|125|124.4",placeholder:"??M"}],"GPT-2 small 约 124M 参数。token_emb 占最大头（38.6M），12层Transformer共85M。","50257×768≈38.6M；总计约 38.6+0.8+85+... ≈ 124M")+''}},
+function(){return{badge:"第四章 · LLM 架构",title:"训练与对齐",desc:"让 AI 既聪明又安全",html:'<div class="sec"><h2>从"能说话"到"说好话"</h2><div class="fey"><div class="lb">费曼式理解</div><p>预训练后的 GPT 像读了所有书的天才——知识渊博但不会好好对话。<b>对齐</b>就是教它做好助手：有用、诚实、无害。</p></div></div><div class="sec"><h2>训练三阶段</h2><div class="ia"><div class="steps" id="trS"><div class="stp on" onclick="sts(0)">预训练</div><div class="stp" onclick="sts(1)">SFT</div><div class="stp" onclick="sts(2)">RLHF</div></div><div id="trC" style="margin-top:12px"><div class="fey"><div class="lb">阶段1：预训练</div><p><b>目标：</b>学习语言和世界知识<br><b>数据：</b>万亿级文本<br><b>方法：</b>预测下一个词<br><b>成本：</b>数百万美元 GPU 算力</p></div></div></div></div><div class="sec"><h2>互动：模拟 RLHF 排序</h2><div class="ia"><h4>你来当标注员！选出最佳回答</h4><div style="background:var(--bg);padding:10px 14px;border-radius:8px;margin-bottom:10px"><span style="color:var(--acc);font-size:12px">用户问题：</span><span id="rQ">如何学好编程？</span></div><div id="rO"></div><div id="rF" style="margin-top:10px;font-size:13px;display:none"></div><div class="bg"><button class="btn btn-s" onclick="nr()">换一个问题</button></div></div></div><div class="sec"><h2>从 RLHF 到 LoRA</h2><div class="kp"><div class="lb">桥接下一章</div>RLHF 需要微调整个模型，成本很高。有没有更高效的方法？<b>LoRA</b>（低秩适配）只训练极少量参数就能达到类似效果。这是第五章的核心内容。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么预训练之后还需要 RLHF？</h4><textarea class="ei" id="f13" placeholder="想想预训练模型的局限性..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(13)">提交我的理解</button></div><div class="er" id="fr13"></div></div></div><div class="qb"><h4>小测验</h4><p>RLHF 中的"H"代表什么？</p><button class="qo" onclick="cq(this,0)">A. Hybrid</button><button class="qo" onclick="cq(this,1)">B. Human</button><button class="qo" onclick="cq(this,0)">C. Hidden</button><button class="qo" onclick="cq(this,0)">D. Hierarchical</button><div class="qf">RLHF = Reinforcement Learning from Human Feedback。人类标注员的偏好指导模型行为。</div></div>'
++ex("e13","RLHF 三阶段排序","把 GPT 训练的三个阶段按正确顺序填写：",["阶段1：","","（在海量文本上预测下一个词）\n阶段2：","","（在人类标注的对话数据上微调）\n阶段3：","","（用人类偏好排序训练奖励模型）"],[{answer:"预训练|Pre-training",placeholder:"???"},{answer:"SFT|监督微调",placeholder:"???"},{answer:"RLHF",placeholder:"???"}],"预训练→SFT→RLHF。先学知识，再学对话格式，最后学人类偏好。","先读书（预训练），再学说话（SFT），再学说好话（RLHF）")+''}},
+// L14-L17: Chapter 5 Engineering Practice
+function(){return{badge:"第五章 · 工程实践",title:"自动微分引擎",desc:"backward() 到底做了什么",html:'<div class="sec"><h2>计算图与反向传播</h2><div class="fey"><div class="lb">费曼式理解</div><p>每次你做一个运算（加法、乘法、矩阵乘），SPTorch 都会在"计算图"中记一笔。反向传播时，沿着图从输出往回走，用<b>链式法则</b>逐层算出每个参数的梯度。<br><br>关键概念：<b>种子梯度</b>——dL/dL = 1.0，这是推倒多米诺骨牌的第一推。</p></div></div><div class="sec"><h2>互动：计算图可视化</h2><div class="ia"><h4>观察 z = (x × y) + x 的前向和反向传播</h4><div class="cc"><canvas id="c14" width="520" height="300"></canvas></div><div class="bg"><button class="btn btn-p" onclick="fwdGraph()">前向传播</button><button class="btn btn-p" onclick="bwdGraph()">反向传播</button><button class="btn btn-s" onclick="rstGraph()">重置</button></div><div id="graphI" style="margin-top:8px;font-size:12px;color:var(--tx2)">x=3, y=2 → 点击"前向传播"开始</div></div></div><div class="sec"><h2>在真实代码中：backward()</h2>'+codeBlock("backward","sptorch/crates/core-tensor/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>SPTorch 用<b>迭代式拓扑排序</b>（BFS 队列）而非递归，避免深层网络栈溢出。梯度在菱形图（x 被用两次）中会<b>累加</b>——这就是为什么 x 的梯度是 y+1 而不是 y 或 1。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>什么是"种子梯度"？为什么 backward() 需要它？</h4><textarea class="ei" id="f14" placeholder="想想多米诺骨牌的比喻..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(14)">提交我的理解</button></div><div class="er" id="fr14"></div></div></div><div class="qb"><h4>小测验</h4><p>如果 x 在计算图中被用了两次，它的梯度会怎样？</p><button class="qo" onclick="cq(this,1)">A. 两条路径的梯度累加</button><button class="qo" onclick="cq(this,0)">B. 只取最后一条路径</button><button class="qo" onclick="cq(this,0)">C. 取平均</button><button class="qo" onclick="cq(this,0)">D. 报错</button><div class="qf">梯度累加！z=(x*y)+x 中，x 的梯度 = ∂(x*y)/∂x + ∂x/∂x = y + 1。这是自动微分的核心规则。</div></div>'
++ex("e14","补全 backward() 的 BFS","SPTorch 用迭代式拓扑排序实现反向传播：",["pub fn backward(&self) {\n    let seed = Tensor::ones(self.shape());\n    let mut queue = VecDeque::new();\n    queue.push_back((self.clone(), seed));\n    while let Some((tensor, grad)) = queue.","","() {\n        tensor.","","(&grad);\n        if let Some(node) = &tensor.node {\n            let grads = node.op.","","(&grad);\n            for (input, g) in node.inputs.iter()\n                                .zip(grads) {\n                if let Some(g) = g {\n                    queue.push_back((input.clone(), g));\n                }\n            }\n        }\n    }\n}"],[{answer:"pop_front",placeholder:"???"},{answer:"accumulate_grad",placeholder:"???"},{answer:"backward",placeholder:"???"}],"BFS 队列弹出节点，累加梯度，调用算子的 backward 得到输入梯度，再入队。迭代式避免了递归栈溢出。","队列操作用 pop_front；梯度要累加（不是覆盖）；每个 Op 都有 backward 方法")+ex("e14b","手算计算图梯度","z = (a + b) × c，a=2, b=3, c=4。求 ∂z/∂a, ∂z/∂b, ∂z/∂c：",["// 前向：t = a + b = 5，z = t × c = 20\n// 反向：\n// ∂z/∂t = c = 4，∂z/∂c = t = 5\n// ∂z/∂a = ∂z/∂t × ∂t/∂a = 4 × 1 = ","","\n// ∂z/∂b = ∂z/∂t × ∂t/∂b = 4 × 1 = ","","\n// ∂z/∂c = t = ",""],[{answer:"4",placeholder:"?"},{answer:"4",placeholder:"?"},{answer:"5",placeholder:"?"}],"加法节点把梯度原样传给两个输入（都是4），乘法节点交叉传递（c的梯度=t=5）。","加法导数=1，乘法导数=对方的值")+''}},
+function(){return{badge:"第五章 · 工程实践",title:"分词与 BPE",desc:"从文字到 Token 的旅程",html:'<div class="sec"><h2>为什么需要分词？</h2><div class="fey"><div class="lb">费曼式理解</div><p>模型只认识数字。需要把文字变成数字序列。<br><br><b>字符级：</b>"hello" → [h,e,l,l,o]（序列太长）<br><b>词级：</b>"hello" → [hello]（词表太大，遇到新词就傻了）<br><b>BPE：</b>"hello" → [hel,lo]（折中方案，用有限词表覆盖无限词汇）</p></div></div><div class="sec"><h2>BPE 算法：贪心合并</h2><p>1. 从字符级开始<br>2. 统计所有相邻 token 对的出现次数<br>3. 把最频繁的一对合并成新 token<br>4. 重复直到词表达到目标大小</p></div><div class="sec"><h2>互动：BPE 训练模拟器</h2><div class="ia"><h4>点击"合并一步"观察 BPE 如何逐步构建词表</h4><div style="margin-bottom:10px"><span style="font-size:12px;color:var(--tx2)">输入文本：</span><span style="font-size:13px;color:var(--tx)" id="bpeText">aaabdaaabac</span></div><div style="margin-bottom:8px"><span style="font-size:12px;color:var(--tx2)">当前 Token 序列：</span><div id="bpeToks" style="margin-top:4px"></div></div><div style="margin-bottom:8px"><span style="font-size:12px;color:var(--tx2)">词表：</span><span id="bpeVocab" style="font-size:12px;color:var(--pl)"></span></div><div style="margin-bottom:8px"><span style="font-size:12px;color:var(--tx2)">合并规则：</span><div id="bpeMerges" style="font-size:12px;color:var(--ok)"></div></div><div class="bg"><button class="btn btn-p" onclick="bpeStep()">合并一步</button><button class="btn btn-s" onclick="bpeReset()">重置</button></div><div id="bpeI" style="margin-top:8px;font-size:12px;color:var(--tx2)"></div></div></div><div class="sec"><h2>在真实代码中：BPE 训练</h2>'+codeBlock("bpe","sptorch/crates/data/src/lib.rs")+'</div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么 BPE 比字符级分词更好？</h4><textarea class="ei" id="f15" placeholder="想想序列长度和词表大小的权衡..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(15)">提交我的理解</button></div><div class="er" id="fr15"></div></div></div><div class="qb"><h4>小测验</h4><p>BPE 每一步做什么？</p><button class="qo" onclick="cq(this,0)">A. 随机合并两个 token</button><button class="qo" onclick="cq(this,1)">B. 合并出现次数最多的相邻 token 对</button><button class="qo" onclick="cq(this,0)">C. 删除出现最少的 token</button><button class="qo" onclick="cq(this,0)">D. 把所有相同字符合并</button><div class="qf">BPE 是贪心算法：每步找到最频繁的相邻对，合并成新 token。这样高频组合优先获得自己的 token。</div></div>'
++ex("e15","BPE 手动合并","文本 aaabdaaabac，初始词表 {a,b,c,d}。最频繁的相邻对是什么？合并后序列变成什么？",["初始序列：a a a b d a a a b a c\n\n统计相邻对：\n  (a,a) 出现 ","","次\n  (a,b) 出现 2次\n  (b,d) 出现 1次\n  ...\n\n最频繁的对：(","",",","",")\n合并后新 token：aa\n新序列：aa a b d aa a b a c"],[{answer:"4",placeholder:"?"},{answer:"a",placeholder:"?"},{answer:"a",placeholder:"?"}],"(a,a) 出现 4 次最多，合并成 aa。序列从 11 个 token 变成 8 个。BPE 就是这样逐步压缩的。","数一数 a 后面紧跟 a 的有几处")+ex("e15b","补全 BPE 训练核心","补全 BPE 训练中找最频繁对和合并的逻辑：",["while vocab.len() < target_vocab {\n    let mut pairs = HashMap::new();\n    for w in ids.","","(2) {\n        *pairs.entry((w[0],w[1]))\n              .or_insert(0) += 1;\n    }\n    let best = pairs.iter()\n        .","","(|(_,c)| *c);\n    let new_token = format!(\"{}{}\",\n        vocab[best.0], vocab[best.1]);\n    vocab.push(new_token);\n}"],[{answer:"windows",placeholder:"???"},{answer:"max_by_key",placeholder:"???"}],"windows(2) 滑动窗口遍历相邻对，max_by_key 找出现次数最多的。这就是 BPE 的贪心策略。","滑动窗口大小为 2；按计数找最大值")+''}},
+function(){return{badge:"第五章 · 工程实践",title:"LoRA 微调",desc:"用极少参数适配大模型",html:'<div class="sec"><h2>为什么需要 LoRA？</h2><div class="fey"><div class="lb">费曼式理解</div><p>全量微调 GPT-3 需要更新 1750 亿参数——太贵了！<br><br>LoRA 的洞察：微调时权重的变化是<b>低秩</b>的（大部分变化可以用很少几个方向描述）。所以不直接改 W，而是加一个 <b>ΔW = B × A</b>，其中 A 和 B 都很小。<br><br>类比：不重写整本教科书，只在旁边贴便签纸。</p></div></div><div class="sec"><h2>LoRA 原理</h2><div class="math">output = W·x + (α/r) · B·A·x</div><p>W 冻结不动，只训练 A [rank × in] 和 B [out × rank]。rank 通常只有 4~64。</p></div><div class="sec"><h2>互动：LoRA 参数计算器</h2><div class="ia"><h4>调整参数，对比全量微调 vs LoRA 的参数量</h4><div class="cc"><canvas id="c16" width="500" height="260"></canvas></div><div class="sg"><label>模型维度 d：</label><input type="range" id="loraD" min="64" max="4096" value="768" step="64"><span class="v" id="loraDV">768</span></div><div class="sg"><label>LoRA rank：</label><input type="range" id="loraR" min="1" max="64" value="8" step="1"><span class="v" id="loraRV">8</span></div><div class="sg"><label>层数：</label><input type="range" id="loraN" min="1" max="96" value="12" step="1"><span class="v" id="loraNV">12</span></div><div id="loraI" style="margin-top:8px;font-size:13px;color:var(--tx2)"></div></div></div><div class="sec"><h2>在真实代码中：LoRALinear</h2>'+codeBlock("lora","sptorch/crates/nn/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>B 初始化为零，所以训练开始时 LoRA 不改变原模型行为。训练完成后可以 merge：W\' = W + (α/r)·B·A，合并后推理无额外开销。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>LoRA 为什么能用这么少的参数达到好效果？</h4><textarea class="ei" id="f16" placeholder="想想"低秩"意味着什么..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(16)">提交我的理解</button></div><div class="er" id="fr16"></div></div></div><div class="qb"><h4>小测验</h4><p>为什么 LoRA 的 B 矩阵初始化为零？</p><button class="qo" onclick="cq(this,1)">A. 让 LoRA 开始时不改变原模型</button><button class="qo" onclick="cq(this,0)">B. 节省内存</button><button class="qo" onclick="cq(this,0)">C. 加速训练</button><button class="qo" onclick="cq(this,0)">D. 防止过拟合</button><div class="qf">B=0 意味着 ΔW=B·A=0，训练开始时模型行为和原来完全一样。这是一个优雅的设计——从"不变"开始，逐渐学习变化。</div></div>'
++ex("e16","补全 LoRA forward","LoRA 在原始 Linear 输出上加一个低秩增量：",["fn forward(&self, x: &Tensor) -> Tensor {\n    let base_out = self.base.forward(x);\n    let scale = self.alpha / self.","","  as f32;\n    let h = matmul(x, &transpose(&self.","","));\n    let delta = scale_op(\n        &matmul(&h, &transpose(&self.","",")),\n        scale\n    );\n    add(&base_out, &delta)\n}"],[{answer:"rank",placeholder:"???"},{answer:"lora_a",placeholder:"???"},{answer:"lora_b",placeholder:"???"}],"scale = α/rank 控制 LoRA 的影响力。x 先过 A（降维到 rank），再过 B（升维回来），乘以 scale 后加到原始输出上。","缩放因子用 rank；先过 A 降维，再过 B 升维")+ex("e16b","LoRA 参数量计算","d=4096, rank=8。计算 LoRA 参数量和节省比例：",["全量微调：d × d = 4096 × 4096 = ","","参数\nLoRA A: rank × d = 8 × 4096 = 32768\nLoRA B: d × rank = 4096 × 8 = 32768\nLoRA 总计：","","参数\n节省比例：65536 / 16777216 ≈ ","","%"],[{answer:"16777216",placeholder:"???"},{answer:"65536",placeholder:"???"},{answer:"0.39|0.4",placeholder:"?%"}],"LoRA 只需 0.39% 的参数！rank=8 时每层只需 65K 参数，而全量需要 16.7M。","4096²=16777216；A+B=2×8×4096=65536；65536/16777216≈0.0039")+''}},
+function(){return{badge:"第五章 · 工程实践",title:"优化器详解",desc:"SGD、Adam 与学习率调度",html:'<div class="sec"><h2>超越朴素 SGD</h2><div class="fey"><div class="lb">费曼式理解</div><p>朴素 SGD 像在山上蒙眼走路——每步只看当前坡度。<br><br><b>SGD+动量：</b>像滚球，积累历史速度，穿过小坑不停下。<br><b>Adam：</b>像有经验的登山者，既记住方向（一阶矩），又记住地形陡峭程度（二阶矩），自适应调整每个参数的步长。</p></div></div><div class="sec"><h2>互动：三种优化器对比</h2><div class="ia"><h4>观察 SGD、SGD+动量、AdamW 在同一损失面上的轨迹</h4><div class="cc"><canvas id="c17" width="500" height="350"></canvas></div><div class="sg"><label>学习率：</label><input type="range" id="optLR" min="0.001" max="0.1" value="0.02" step="0.001"><span class="v" id="optLRV">0.020</span></div><div class="bg"><button class="btn btn-p" onclick="runOpt()">开始优化</button><button class="btn btn-s" onclick="rstOpt()">重置</button></div><div id="optI" style="margin-top:8px;font-size:12px;color:var(--tx2)"></div></div></div><div class="sec"><h2>在真实代码中：AdamW</h2>'+codeBlock("adamw","sptorch/crates/optim/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>AdamW 的"W"代表 decoupled weight decay——权重衰减和梯度更新分开计算。这比 L2 正则化更好，因为不会影响 Adam 的自适应学习率。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>Adam 比 SGD 好在哪里？</h4><textarea class="ei" id="f17" placeholder="想想自适应学习率的意义..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(17)">提交我的理解</button></div><div class="er" id="fr17"></div></div></div><div class="qb"><h4>小测验</h4><p>Adam 的偏差校正解决什么问题？</p><button class="qo" onclick="cq(this,1)">A. 早期步骤的矩估计有偏</button><button class="qo" onclick="cq(this,0)">B. 梯度爆炸</button><button class="qo" onclick="cq(this,0)">C. 学习率太大</button><button class="qo" onclick="cq(this,0)">D. 内存不足</button><div class="qf">m 和 v 初始化为 0，早期步骤的估计偏向 0。偏差校正 m/(1-β^t) 补偿了这个偏差。</div></div>'
++ex("e17","补全 AdamW 更新","AdamW 的核心：一阶矩(均值) + 二阶矩(方差) + 偏差校正 + 权重衰减：",["fn step(&mut self) {\n    self.t += 1;\n    for (p, m, v) in params.iter() {\n        let g = p.grad();\n        // 一阶矩：梯度的指数移动平均\n        *m = self.beta1 * *m\n           + (1.0 - self.beta1) * g;\n        // 二阶矩：梯度平方的指数移动平均\n        *v = self.beta2 * *v\n           + (1.0 - self.beta2) * g * ","",";\n        // 偏差校正\n        let m_hat = *m / (1.0 - self.beta1.","","(self.t));\n        let v_hat = *v / (1.0 - self.beta2.powi(self.t));\n        // 更新 = Adam + 权重衰减\n        *p -= self.lr * (\n            m_hat / (v_hat.sqrt() + self.eps)\n            + self.","","  * *p\n        );\n    }\n}"],[{answer:"g",placeholder:"???"},{answer:"powi",placeholder:"???"},{answer:"weight_decay",placeholder:"???"}],"二阶矩跟踪 g²（梯度平方）；偏差校正用 powi(t) 即 β^t；AdamW 的 W 就是 weight_decay（权重衰减）。","v 跟踪 g²；β^t 用 powi；AdamW 的特色是解耦的权重衰减")+ex("e17b","手算梯度裁剪","参数梯度 g1=[3,4], g2=[0]。max_norm=5，计算裁剪后的梯度：",["// 全局梯度范数\ntotal_norm = sqrt(3² + 4² + 0²)\n           = sqrt(25) = ","","\n\n// clip_coef = max_norm / total_norm\n//           = 5 / 5 = 1.0\n\n// 因为 clip_coef >= 1.0，所以\n// 梯度","","（不需要裁剪）"],[{answer:"5",placeholder:"?"},{answer:"不变|保持不变",placeholder:"???"}],"全局范数=5，等于 max_norm，所以不裁剪。如果范数>5，所有梯度会等比缩小。","3²+4²=25，√25=5；5/5=1，不需要缩放")+''}},
+// L18-L20: Chapter 6 Production & Scale
+function(){return{badge:"第六章 · 生产与规模",title:"分布式训练",desc:"多机协同训练大模型",html:'<div class="sec"><h2>为什么需要分布式？</h2><div class="fey"><div class="lb">费曼式理解</div><p>GPT-3 有 1750 亿参数，一张 GPU 装不下。解决方案：<b>数据并行</b>——每张 GPU 拿不同的数据，用相同的模型算梯度，然后把梯度平均。<br><br>类比：一道大菜，多个厨师各做一部分，最后合在一起。</p></div></div><div class="sec"><h2>Ring AllReduce</h2><p>怎么高效地让所有 GPU 拿到平均梯度？Ring AllReduce：节点排成环，每个节点只和邻居通信。</p><div class="math">N 个节点，每个有梯度 gᵢ → 所有节点得到 (g₁+g₂+...+gₙ)/N</div></div><div class="sec"><h2>互动：Ring AllReduce 动画</h2><div class="ia"><h4>观察 4 个节点如何通过环形通信完成梯度平均</h4><div class="cc"><canvas id="c18" width="500" height="400"></canvas></div><div class="bg"><button class="btn btn-p" onclick="runAR()">开始 AllReduce</button><button class="btn btn-s" onclick="rstAR()">重置</button></div><div id="arI" style="margin-top:8px;font-size:12px;color:var(--tx2)">4 个节点各有不同的梯度值，点击开始观察同步过程</div></div></div><div class="sec"><h2>在真实代码中：Ring AllReduce</h2>'+codeBlock("allreduce","sptorch/crates/distributed/src/allreduce.rs")+'<div class="kp"><div class="lb">关键洞察</div>Ring AllReduce 只需 2(N-1) 步通信，每步只传 1/N 的数据。带宽利用率接近 100%，不管节点多少。这就是为什么它是分布式训练的标准方案。</div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>数据并行中，GPU 之间同步的是什么？</h4><textarea class="ei" id="f18" placeholder="想想每个 GPU 各自做了什么..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(18)">提交我的理解</button></div><div class="er" id="fr18"></div></div></div><div class="qb"><h4>小测验</h4><p>数据并行中，GPU 之间同步的是？</p><button class="qo" onclick="cq(this,0)">A. 训练数据</button><button class="qo" onclick="cq(this,1)">B. 梯度</button><button class="qo" onclick="cq(this,0)">C. 模型权重</button><button class="qo" onclick="cq(this,0)">D. 损失值</button><div class="qf">每个 GPU 用不同数据算出梯度，然后 AllReduce 平均梯度，再各自更新权重。同步的是梯度，不是数据或权重。</div></div>'
++ex("e18","补全 Ring AllReduce","Ring AllReduce 分两阶段：scatter-reduce 和 allgather：",["pub fn ring_allreduce(grads: &mut [Vec<f32>]) {\n    let n = grads.len();\n    let chunk_size = grads[0].len() / n;\n    // Phase 1: Scatter-Reduce\n    for step in 0..n-1 {\n        for i in 0..n {\n            let send_to = (i + 1) % ","",";\n            let chunk_idx = (i - step + n) % n;\n            // 累加到下一个节点\n            for j in 0..chunk_size {\n                grads[send_to][chunk_idx*chunk_size+j]\n                    += grads[i][chunk_idx*chunk_size+j];\n            }\n        }\n    }\n    // Phase 2: ","","\n    // 广播已归约的 chunk 到所有节点\n}"],[{answer:"n",placeholder:"???"},{answer:"Allgather",placeholder:"???"}],"Ring 中每个节点只和相邻节点通信。n 个节点需要 n-1 步 scatter-reduce + n-1 步 allgather。带宽最优！","环形拓扑中 send_to 是下一个节点 (i+1)%n；第二阶段叫 Allgather")+ex("e18b","数据并行切分","batch_size=32, 4个GPU。每个GPU分到多少样本？",["total_batch = 32\nnum_gpus = 4\nper_gpu = 32 / 4 = ","","个样本\n\n// 每个 GPU 独立做前向+反向\n// 然后 AllReduce 平均梯度\n// 梯度平均后等价于在完整 batch 上训练"],[{answer:"8",placeholder:"?"}],"数据并行就是把 batch 均分。每个 GPU 处理 8 个样本，梯度平均后等价于 batch=32 的效果。","32÷4=8")+''}},
+function(){return{badge:"第六章 · 生产与规模",title:"在线学习",desc:"让模型在生产中持续进化",html:'<div class="sec"><h2>部署不是终点</h2><div class="fey"><div class="lb">费曼式理解</div><p>传统做法：训练 → 部署 → 完事。但现实中数据分布会变化（用户行为变了、新话题出现了），模型会逐渐变差。<br><br>SPTorch 的方案：<b>双缓冲参数</b>——推理用"活跃"参数，训练更新"影子"参数，训练完原子交换。推理永远不会看到半更新的参数。</p></div></div><div class="sec"><h2>互动：双缓冲交换</h2><div class="ia"><h4>观察推理和训练如何并行不干扰</h4><div style="display:flex;justify-content:center;gap:40px;margin:16px 0;flex-wrap:wrap"><div class="dbuf dbuf-a" id="dbA"><div style="font-size:11px;margin-bottom:4px">活跃（推理用）</div><div id="dbAV" style="font-size:20px;font-family:monospace">1.00</div></div><div class="dbuf dbuf-s" id="dbB"><div style="font-size:11px;margin-bottom:4px">影子（训练用）</div><div id="dbBV" style="font-size:20px;font-family:monospace">1.00</div></div></div><div class="bg" style="justify-content:center"><button class="btn btn-s" onclick="dbTrain()">训练一步</button><button class="btn btn-p" onclick="dbSwap()">原子交换</button><button class="btn btn-s" onclick="dbRst()">重置</button></div><div id="dbI" style="margin-top:8px;font-size:12px;color:var(--tx2);text-align:center">影子参数在训练中更新，活跃参数保持稳定</div></div></div><div class="sec"><h2>灾难性遗忘与 EWC</h2><div class="fey"><div class="lb">费曼式理解</div><p>学新东西时忘了旧东西——这就是<b>灾难性遗忘</b>。<br><br>EWC（弹性权重巩固）的思路：用 <b>Fisher 信息</b>衡量每个参数对旧任务的重要性。重要的参数不让它变太多，不重要的随便改。<br><br>类比：搬家时，贵重物品小心搬（不能摔），普通物品随便扔。</p></div><div class="math">惩罚 = (λ/2) × Σ Fᵢ × (θᵢ - θ*ᵢ)²</div><p>Fᵢ = Fisher 信息（重要性），θ*ᵢ = 旧任务最优参数，θᵢ = 当前参数。</p></div><div class="sec"><h2>互动：EWC 惩罚可视化</h2><div class="ia"><h4>观察参数重要性如何约束更新</h4><div class="cc"><canvas id="c19" width="500" height="250"></canvas></div><div class="sg"><label>参数偏移：</label><input type="range" id="ewcD" min="0" max="2" value="0" step="0.05"><span class="v" id="ewcDV">0.00</span></div><div class="sg"><label>λ 强度：</label><input type="range" id="ewcL" min="0" max="2" value="0.5" step="0.1"><span class="v" id="ewcLV">0.50</span></div><div id="ewcI" style="margin-top:8px;font-size:12px;color:var(--tx2)"></div></div></div><div class="sec"><h2>在真实代码中</h2>'+codeBlock("ewc","sptorch/crates/live-evolution/src/ewc.rs")+''+codeBlock("dbuf","sptorch/crates/live-evolution/src/double_buffer.rs")+'</div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么用双缓冲而不是直接更新参数？</h4><textarea class="ei" id="f19" placeholder="想想推理服务的稳定性..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(19)">提交我的理解</button></div><div class="er" id="fr19"></div></div></div><div class="qb"><h4>小测验</h4><p>EWC 中 Fisher 信息高的参数意味着什么？</p><button class="qo" onclick="cq(this,1)">A. 对旧任务很重要，不能大幅改变</button><button class="qo" onclick="cq(this,0)">B. 可以随意修改</button><button class="qo" onclick="cq(this,0)">C. 应该删除</button><button class="qo" onclick="cq(this,0)">D. 需要更大学习率</button><div class="qf">Fisher 信息高 = 该参数对旧任务的损失影响大 = 改变它会破坏旧知识。EWC 通过惩罚项阻止这些参数大幅变化。</div></div>'
++ex("e19","补全 EWC 惩罚","EWC 用 Fisher 信息加权惩罚参数偏离：",["pub fn penalty(&self, params: &[Tensor]) -> f32 {\n    let mut total = 0.0;\n    for (i, p) in params.iter().enumerate() {\n        let data = p.data();\n        for j in 0..data.len() {\n            let diff = data[j]\n                     - self.","","[i][j];\n            total += self.","","[i][j]\n                   * diff * diff;\n        }\n    }\n    self.lambda / 2.0 * total\n}"],[{answer:"param_snapshot",placeholder:"???"},{answer:"fisher_diag",placeholder:"???"}],"diff = 当前参数 - 快照参数（param_snapshot）。Fisher 信息（fisher_diag）作为权重：重要参数偏离惩罚更大。","第一个空是旧参数快照；第二个空是 Fisher 信息对角线")+ex("e19b","补全双缓冲交换","双缓冲让推理和训练互不干扰：",["pub fn swap(&self) {\n    // 原子交换 active 和 shadow\n    let was_a = self.a_is_active\n        .","","(Ordering::AcqRel);\n    // was_a=true → 现在 B 是 active\n    // was_a=false → 现在 A 是 active\n    // 推理线程看到的永远是完整的参数\n    // 训练线程更新的是另一份副本\n}"],[{answer:"fetch_not|swap",placeholder:"???"}],"原子操作 fetch_not 翻转布尔值，无锁切换 active/shadow。推理永远看到一致的参数状态。","原子布尔翻转：fetch_not 或 swap")+''}},
+function(){return{badge:"第六章 · 生产与规模",title:"硬件与 GPU 加速",desc:"让代码在任何硬件上飞",html:'<div class="sec"><h2>硬件抽象层</h2><div class="fey"><div class="lb">费曼式理解</div><p>不同芯片（CPU、NVIDIA GPU、华为 NPU）有不同的编程接口。如果每个算子都写三遍，代码量爆炸。<br><br>SPTorch 的方案：定义一个<b>统一接口</b>（Backend + KernelProvider），每种硬件实现这个接口。算子代码只写一遍，运行时自动选择合适的硬件。<br><br>类比：USB 接口——不管是键盘、鼠标还是U盘，都用同一个插口。</p></div></div><div class="sec"><h2>互动：内核调度流程</h2><div class="ia"><h4>观察运算如何被分配到不同硬件</h4><div class="cc"><canvas id="c20" width="500" height="300"></canvas></div><div class="sg"><label>矩阵大小：</label><input type="range" id="hwSize" min="16" max="512" value="64" step="16"><span class="v" id="hwSizeV">64</span></div><div id="hwI" style="margin-top:8px;font-size:12px;color:var(--tx2)"></div></div></div><div class="sec"><h2>在真实代码中：HAL 接口</h2>'+codeBlock("hal","sptorch/crates/hal/src/lib.rs")+'<div class="kp"><div class="lb">关键洞察</div>SPTorch 的 GPU 阈值是 128×128——小于这个尺寸用 CPU 更快，因为 CPU→GPU 数据传输的开销超过了 GPU 并行计算的收益。这种"不是越大越好"的工程判断在实际系统中非常重要。</div></div><div class="sec"><h2>GPU 为什么快？</h2><div class="ana"><div class="lb">核心区别</div><p><b>CPU：</b>几个强大的核心，擅长复杂逻辑（像几个博士）<br><b>GPU：</b>几千个简单核心，擅长并行计算（像几千个小学生）<br><br>矩阵乘法需要大量简单的乘加运算——正好适合 GPU。但如果矩阵太小，"把题目发给小学生"的时间比"博士自己算"还长。</p></div></div><div class="sec"><h2>费曼检验</h2><div class="ia"><h4>为什么小矩阵用 CPU 比 GPU 快？</h4><textarea class="ei" id="f20" placeholder="想想数据传输的开销..."></textarea><div class="bg"><button class="btn btn-p" onclick="ef(20)">提交我的理解</button></div><div class="er" id="fr20"></div></div></div><div class="qb"><h4>小测验</h4><p>SPTorch 为什么不对 128×128 以下的矩阵用 GPU？</p><button class="qo" onclick="cq(this,0)">A. GPU 不支持小矩阵</button><button class="qo" onclick="cq(this,1)">B. 数据传输开销超过计算收益</button><button class="qo" onclick="cq(this,0)">C. 节省 GPU 内存</button><button class="qo" onclick="cq(this,0)">D. CPU 精度更高</button><div class="qf">CPU→GPU 数据拷贝需要时间。小矩阵的计算量太少，GPU 的并行优势还没发挥出来，传输开销就已经超过了计算时间。</div></div>'
++ex("e20","补全 Backend trait","SPTorch 的硬件抽象层让同一份代码跑在不同硬件上：",["pub trait Backend: Send + Sync {\n    fn ","","(&self, size: usize) -> DevicePtr;\n    fn copy_to_host(&self, ptr: &DevicePtr,\n                    dst: &mut [f32]);\n    fn copy_from_host(&self, src: &[f32],\n                      ptr: &DevicePtr);\n    fn ","","(&self);\n}\n\npub trait KernelProvider: Send + Sync {\n    fn add_f32(&self, a: &[f32], b: &[f32],\n               out: &mut [f32]);\n    fn ","","(&self, a: &[f32], b: &[f32],\n                out: &mut [f32],\n                m: usize, k: usize, n: usize);\n}"],[{answer:"allocate",placeholder:"???"},{answer:"synchronize",placeholder:"???"},{answer:"matmul_f32",placeholder:"???"}],"allocate 分配设备内存，synchronize 等待异步操作完成，matmul_f32 是最关键的矩阵乘法核函数。","分配内存、同步设备、矩阵乘法——这三个是任何加速器都必须实现的")+ex("e20b","GPU 阈值决策","矩阵大小 64×64，GPU 阈值 128×128。应该用 CPU 还是 GPU？",["matrix_size = 64 × 64 = 4096\nthreshold = 128 × 128 = 16384\n\n4096 ","","  16384\n\n结论：使用 ","","\n原因：传输开销 > 并行收益"],[{answer:"<",placeholder:"? (比较符号)"},{answer:"CPU",placeholder:"???"}],"4096 < 16384，低于阈值，用 CPU 更快。GPU 只在大矩阵时才值得，因为数据搬运有固定开销。","4096 比 16384 小，所以不走 GPU")+'<div class="sec" style="margin-top:40px;text-align:center"><div class="fey" style="background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(99,102,241,.15))"><div class="lb">恭喜完成全部课程！</div><p style="font-size:15px;color:var(--tx)">你已经从零开始，走过了数学基础、机器学习、深度学习、LLM 架构、工程实践，一直到生产系统的完整旅程。<br><br>这些知识不是纸上谈兵——它们全部来自 <b>SPTorch</b> 这个真实的深度学习框架。<br><br>记住费曼的话：<b>"如果你不能用简单的话解释它，说明你还没有真正理解它。"</b></p></div></div>'}}
+];
+
+// ===== NAVIGATION =====
+function go(i){if(i<0||i>=TOTAL)return;cur=i;var d=lessons[i]();
+var h='<div class="lh anim"><div class="badge">'+d.badge+'</div><h1 class="lt">'+d.title+'</h1><p class="ld">'+d.desc+'</p></div>'+d.html;
+h+='<div class="fn"><button class="btn btn-s" onclick="go('+(i-1)+')"'+(i===0?' disabled style="opacity:.3"':'')+'>&#8592; 上一课</button>';
+h+='<button class="btn btn-p" onclick="dn('+i+')">'+(i<TOTAL-1?'完成并继续 &#8594;':'完成课程 &#127881;')+'</button></div>';
+document.getElementById('ct').innerHTML=h;
+document.querySelectorAll('.ni').forEach(function(el,j){el.classList.toggle('on',j===i);});
+window.scrollTo({top:0,behavior:'smooth'});
+var s=document.querySelector('.side');if(s)s.classList.remove('open');
+saveP();setTimeout(function(){initI(i);},100);}
+function dn(i){done[i]=1;up();if(i<TOTAL-1)go(i+1);}
+function up(){var c=Object.keys(done).length;document.getElementById('pFill').style.width=(c/TOTAL*100).toFixed(0)+'%';document.getElementById('pTxt').textContent=c+'/'+TOTAL;
+document.querySelectorAll('.ni').forEach(function(el,j){el.querySelector('.ck').textContent=done[j]?'✓':'';el.classList.toggle('dn',!!done[j]);});saveP();}
+
+// ===== QUIZ =====
+function cq(btn,ok){var box=btn.closest('.qb');if(box.dataset.a)return;box.dataset.a='1';btn.classList.add(ok?'ok':'no');
+if(!ok){var bs=box.querySelectorAll('.qo');for(var i=0;i<bs.length;i++){if(bs[i].getAttribute('onclick').indexOf(',1)')>-1)bs[i].classList.add('ok');}}
+var fb=box.querySelector('.qf');fb.classList.add('show');fb.style.background=ok?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)';fb.style.color=ok?'#10b981':'#ef4444';}
+
+// ===== FEYNMAN =====
+var fkw=[['向量','数字','列表','方向','AI','表示','特征'],['导数','变化','速度','方向','优化','梯度','链式'],['概率','不确定','可能','选择','分布','随机','温度'],['数据','规则','学习','传统','编程','自动'],['损失','误差','差距','衡量','优化'],['梯度','下山','方向','步长','学习率','更新'],['概率','直线','分类','sigmoid','压缩'],['层','复杂','简单','组合','特征','非线性'],['激活','非线性','曲线','直线'],['向量','语义','相似','距离','编号','关系'],['查询','匹配','关注','相关','权重'],['并行','同时','RNN','顺序','注意力'],['预测','下一个','词','规模','涌现'],['对齐','安全','人类','反馈','RLHF'],['计算图','反向','种子','梯度','累加','拓扑'],['BPE','合并','频率','子词','字符','词表'],['LoRA','低秩','冻结','参数','适配','rank'],['Adam','动量','自适应','学习率','一阶','二阶'],['分布式','并行','梯度','平均','AllReduce','环'],['双缓冲','遗忘','Fisher','重要','EWC','交换'],['GPU','CPU','传输','并行','阈值','硬件','内核']];
+function ef(i){var t=(document.getElementById('f'+i)||{}).value||'';var r=document.getElementById('fr'+i);if(!r)return;
+if(t.trim().length<10){r.className='er show';r.style.background='rgba(239,68,68,.1)';r.style.color='#ef4444';r.textContent='请再多写一些，试着用自己的话完整地解释。';return;}
+var kw=fkw[i]||[];var m=[];for(var j=0;j<kw.length;j++){if(t.indexOf(kw[j])>-1)m.push(kw[j]);}
+var s=Math.min(m.length/Math.max(3,kw.length*0.4),1);r.className='er show';
+if(s>=0.6){r.style.background='rgba(16,185,129,.1)';r.style.color='#10b981';r.textContent='很好！涵盖了关键概念'+(m.length?'（'+m.join('、')+')':'')+'。继续保持！';}
+else if(s>=0.3){r.style.background='rgba(245,158,11,.1)';r.style.color='#f59e0b';r.textContent='不错的开始！'+(m.length?'提到了'+m.join('、')+'。':'')+'试着再深入一些，用生活例子类比。';}
+else{r.style.background='rgba(239,68,68,.1)';r.style.color='#ef4444';r.textContent='还可以更深入。回顾课程内容，抓住核心的一两个点。';}}
+
+// ===== INIT DISPATCHER =====
+function initI(i){switch(i){
+case 0:iVec();iMat();break;case 1:iDeriv();break;case 2:iProb();break;
+case 4:iLR();break;case 5:iGD();iCos();break;case 6:iSig();break;
+case 7:iNN();break;case 8:iAct(0);iBP();break;case 9:iEmb(0);break;
+case 10:iAttn();break;case 11:iTF();break;case 12:iGPT();break;case 13:iRLHF();break;
+case 14:iGraph();break;case 15:bpeReset();break;case 16:iLora();break;case 17:iOpt();break;
+case 18:iAR();break;case 19:iDB();iEWC();break;case 20:iHW();break;}}
+
+// ===== L0: Vector =====
+function iVec(){var cv=document.getElementById('c0');if(!cv)return;var cx=cv.getContext('2d'),vx=document.getElementById('vx'),vy=document.getElementById('vy');
+function dr(){var x=parseFloat(vx.value),y=parseFloat(vy.value);document.getElementById('vxV').textContent=x;document.getElementById('vyV').textContent=y;
+document.getElementById('vL').textContent='√('+x+'²+'+y+'²) = '+Math.sqrt(x*x+y*y).toFixed(2);
+var w=cv.width,h=cv.height,mx=w/2,my=h/2,s=30;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+cx.strokeStyle='#1e293b';cx.lineWidth=1;for(var i=-6;i<=6;i++){cx.beginPath();cx.moveTo(mx+i*s,0);cx.lineTo(mx+i*s,h);cx.stroke();cx.beginPath();cx.moveTo(0,my+i*s);cx.lineTo(w,my+i*s);cx.stroke();}
+cx.strokeStyle='#475569';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,my);cx.lineTo(w,my);cx.stroke();cx.beginPath();cx.moveTo(mx,0);cx.lineTo(mx,h);cx.stroke();
+var ex=mx+x*s,ey=my-y*s;cx.strokeStyle='#818cf8';cx.lineWidth=3;cx.beginPath();cx.moveTo(mx,my);cx.lineTo(ex,ey);cx.stroke();
+var a=Math.atan2(my-ey,ex-mx);cx.fillStyle='#818cf8';cx.beginPath();cx.moveTo(ex,ey);cx.lineTo(ex-12*Math.cos(a-0.3),ey+12*Math.sin(a-0.3));cx.lineTo(ex-12*Math.cos(a+0.3),ey+12*Math.sin(a+0.3));cx.fill();
+cx.fillStyle='#e2e8f0';cx.font='14px sans-serif';cx.fillText('('+x+','+y+')',ex+8,ey-8);
+cx.setLineDash([4,4]);cx.strokeStyle='#6366f1';cx.lineWidth=1;cx.beginPath();cx.moveTo(ex,ey);cx.lineTo(ex,my);cx.stroke();cx.beginPath();cx.moveTo(ex,ey);cx.lineTo(mx,ey);cx.stroke();cx.setLineDash([]);}
+vx.oninput=dr;vy.oninput=dr;dr();}
+function iMat(){var ids=['a00','a01','a10','a11','b00','b01','b10','b11'];function calc(){var a=ids.slice(0,4).map(function(id){return parseFloat(document.getElementById(id).value)||0;});var b=ids.slice(4).map(function(id){return parseFloat(document.getElementById(id).value)||0;});
+document.getElementById('c00').textContent=a[0]*b[0]+a[1]*b[2];document.getElementById('c01').textContent=a[0]*b[1]+a[1]*b[3];document.getElementById('c10').textContent=a[2]*b[0]+a[3]*b[2];document.getElementById('c11').textContent=a[2]*b[1]+a[3]*b[3];}
+ids.forEach(function(id){var el=document.getElementById(id);if(el)el.oninput=calc;});calc();}
+
+// ===== L1: Derivative =====
+function iDeriv(){var cv=document.getElementById('c1');if(!cv)return;var cx=cv.getContext('2d'),sl=document.getElementById('dx');
+function dr(){var xp=parseFloat(sl.value);document.getElementById('dxV').textContent=xp.toFixed(1);var dv=2*xp;document.getElementById('dV').textContent="f'("+xp.toFixed(1)+')='+dv.toFixed(1);
+var w=cv.width,h=cv.height,mx=w/2,my=h*0.75,sx=60,sy=20;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+cx.strokeStyle='#475569';cx.lineWidth=1;cx.beginPath();cx.moveTo(0,my);cx.lineTo(w,my);cx.stroke();cx.beginPath();cx.moveTo(mx,0);cx.lineTo(mx,h);cx.stroke();
+cx.strokeStyle='#6366f1';cx.lineWidth=2;cx.beginPath();for(var px=0;px<w;px++){var x=(px-mx)/sx;cx.lineTo(px,my-x*x*sy);}cx.stroke();
+var px2=mx+xp*sx,py=my-xp*xp*sy;cx.fillStyle='#f59e0b';cx.beginPath();cx.arc(px2,py,6,0,Math.PI*2);cx.fill();
+cx.strokeStyle='#10b981';cx.lineWidth=2;var tl=80;cx.beginPath();cx.moveTo(px2-tl,py+dv*sy*(tl/sx));cx.lineTo(px2+tl,py-dv*sy*(tl/sx));cx.stroke();
+cx.fillStyle='#94a3b8';cx.font='12px sans-serif';cx.fillText('f(x)=x²',10,20);cx.fillStyle='#10b981';cx.fillText('斜率='+dv.toFixed(1),10,38);}
+sl.oninput=dr;dr();}
+
+// ===== L2: Probability =====
+function iProb(){var cv=document.getElementById('c2');if(!cv)return;var cx=cv.getContext('2d'),sl=document.getElementById('tmp');
+var words=['很好','不错','晴朗','真好','糟糕','一般'];var logits=[2.5,2.0,1.8,1.5,0.3,0.8];
+function sm(lg,T){var e=lg.map(function(l){return Math.exp(l/T);});var s=e.reduce(function(a,b){return a+b;},0);return e.map(function(v){return v/s;});}
+function dr(){var T=parseFloat(sl.value);document.getElementById('tmpV').textContent=T.toFixed(1);var pr=sm(logits,T);
+var w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var bw=50,gap=20,sx=(w-words.length*(bw+gap))/2,mh=h-60;
+pr.forEach(function(p,i){var x=sx+i*(bw+gap),bh=p*mh;var g=cx.createLinearGradient(x,h-30-bh,x,h-30);g.addColorStop(0,'#818cf8');g.addColorStop(1,'#4f46e5');cx.fillStyle=g;cx.fillRect(x,h-30-bh,bw,bh);
+cx.fillStyle='#e2e8f0';cx.font='12px sans-serif';cx.textAlign='center';cx.fillText(words[i],x+bw/2,h-12);cx.fillStyle='#94a3b8';cx.font='11px monospace';cx.fillText((p*100).toFixed(1)+'%',x+bw/2,h-36-bh);});cx.textAlign='left';
+var mx=pr.indexOf(Math.max.apply(null,pr));document.getElementById('pW').innerHTML='"今天天气" → <span style="color:var(--pl)">'+words[mx]+'</span>';}
+sl.oninput=dr;dr();}
+
+// ===== L3: ML Types & Steps =====
+var mtD=[{lb:'监督学习',tx:'给模型"题目+答案"。例：10000张猫狗照片。应用：图像分类、GPT预训练'},{lb:'无监督学习',tx:'没有标签，自己发现规律。例：新闻自动聚类。应用：聚类、词嵌入'},{lb:'强化学习',tx:'试错中成长，做对给奖励。例：AlphaGo。应用：RLHF'}];
+function smt(i){var c=document.getElementById('mtC');if(!c)return;c.innerHTML='<div class="ana"><div class="lb">'+mtD[i].lb+'</div><p>'+mtD[i].tx+'</p></div>';document.querySelectorAll('#mlTabs .tab').forEach(function(t,j){t.classList.toggle('on',j===i);});}
+var msD=['收集数据并整理成模型能理解的格式。','根据问题类型选择合适的模型结构。','用梯度下降不断调整参数，让损失越来越小。','用没见过的数据测试效果，检查是否过拟合。','部署到实际应用，持续监控和更新。'];
+function sms(i){document.querySelectorAll('#mlS .stp').forEach(function(s,j){s.classList.toggle('on',j===i);s.classList.toggle('dn',j<i);});document.getElementById('mlSC').innerHTML='<div class="kp"><div class="lb">步骤 '+(i+1)+'</div>'+msD[i]+'</div>';}
+
+// ===== L4: Linear Regression =====
+function iLR(){var cv=document.getElementById('c4');if(!cv)return;var cx=cv.getContext('2d'),ws=document.getElementById('lw'),bs=document.getElementById('lb2');
+var data=[[-2,-1.5],[-1.5,-0.8],[-1,-0.3],[-0.5,0.2],[0,0.5],[0.5,1.2],[1,1.8],[1.5,2.1],[2,2.8],[2.5,3.2],[3,3.5]];
+function dr(){var wv=parseFloat(ws.value),bv=parseFloat(bs.value);document.getElementById('lwV').textContent=wv.toFixed(1);document.getElementById('lbV').textContent=bv.toFixed(1);
+var cw=cv.width,ch=cv.height,mx=cw/2,my=ch/2,sx=60,sy=40;cx.clearRect(0,0,cw,ch);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,cw,ch);
+cx.strokeStyle='#475569';cx.lineWidth=1;cx.beginPath();cx.moveTo(0,my);cx.lineTo(cw,my);cx.stroke();cx.beginPath();cx.moveTo(mx,0);cx.lineTo(mx,ch);cx.stroke();
+var mse=0;data.forEach(function(d){var px=mx+d[0]*sx,py=my-d[1]*sy,pred=wv*d[0]+bv,err=d[1]-pred;mse+=err*err;
+cx.strokeStyle='rgba(239,68,68,0.4)';cx.lineWidth=1;cx.beginPath();cx.moveTo(px,py);cx.lineTo(px,my-pred*sy);cx.stroke();
+cx.fillStyle='#f59e0b';cx.beginPath();cx.arc(px,py,4,0,Math.PI*2);cx.fill();});mse/=data.length;
+document.getElementById('lL').textContent='MSE='+mse.toFixed(3);
+cx.strokeStyle='#10b981';cx.lineWidth=2;cx.beginPath();cx.moveTo(mx-4*sx,my-(wv*-4+bv)*sy);cx.lineTo(mx+4*sx,my-(wv*4+bv)*sy);cx.stroke();}
+ws.oninput=dr;bs.oninput=dr;dr();}
+
+// ===== L5: Gradient Descent + Cosine =====
+var gdP=[],gdA=null;function loss5(x){return x*x+0.5*Math.sin(3*x);}
+function iGD(){gdP=[];drGD();}
+function drGD(){var cv=document.getElementById('c5');if(!cv)return;var cx=cv.getContext('2d'),w=cv.width,h=cv.height,mx=w/2,my=h-40,sx=50,sy=8;
+cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);cx.strokeStyle='#6366f1';cx.lineWidth=2;cx.beginPath();
+for(var px=20;px<w-20;px++){var x=(px-mx)/sx;cx.lineTo(px,my-loss5(x)*sy);}cx.stroke();
+if(gdP.length>0){cx.fillStyle='#f59e0b';gdP.forEach(function(x,i){var px=mx+x*sx,py=my-loss5(x)*sy;cx.beginPath();cx.arc(px,py,i===gdP.length-1?6:3,0,Math.PI*2);cx.fill();
+if(i>0){var pv=gdP[i-1];cx.strokeStyle='rgba(245,158,11,0.5)';cx.lineWidth=1;cx.beginPath();cx.moveTo(mx+pv*sx,my-loss5(pv)*sy);cx.lineTo(px,py);cx.stroke();}});}
+cx.fillStyle='#94a3b8';cx.font='12px sans-serif';cx.fillText('L(w)',10,20);}
+function sgd(){if(gdA)clearTimeout(gdA);var lr=parseFloat(document.getElementById('glr').value);document.getElementById('glrV').textContent=lr.toFixed(2);
+var x=parseFloat(document.getElementById('gst').value);document.getElementById('gstV').textContent=x.toFixed(1);gdP=[x];var step=0;
+function ani(){var g=2*x+1.5*Math.cos(3*x);x=x-lr*g;gdP.push(x);step++;drGD();var l=loss5(x);
+document.getElementById('gdI').textContent='步骤'+step+' w='+x.toFixed(3)+' Loss='+l.toFixed(4);
+if(step<50&&Math.abs(g)>0.001)gdA=setTimeout(ani,150);else document.getElementById('gdI').textContent+=' ✓收敛';}ani();}
+function rgd(){if(gdA){clearTimeout(gdA);gdA=null;}gdP=[];drGD();document.getElementById('gdI').textContent='';}
+function iCos(){var cv=document.getElementById('c5b');if(!cv)return;var cx=cv.getContext('2d'),ws=document.getElementById('cwarm'),ts=document.getElementById('ctotal');
+function dr(){var warm=parseInt(ws.value),total=parseInt(ts.value);document.getElementById('cwarmV').textContent=warm;document.getElementById('ctotalV').textContent=total;
+var w=cv.width,h=cv.height,baseLR=0.003,minLR=0.0003;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+cx.strokeStyle='#475569';cx.lineWidth=1;cx.beginPath();cx.moveTo(40,h-30);cx.lineTo(w-10,h-30);cx.stroke();cx.beginPath();cx.moveTo(40,10);cx.lineTo(40,h-30);cx.stroke();
+cx.strokeStyle='#6366f1';cx.lineWidth=2;cx.beginPath();
+for(var px=40;px<w-10;px++){var step=((px-40)/(w-50))*total;var lr;
+if(step<warm){lr=baseLR*step/warm;}else{var prog=(step-warm)/(total-warm);lr=minLR+0.5*(baseLR-minLR)*(1+Math.cos(Math.PI*prog));}
+cx.lineTo(px,10+(h-40)*(1-lr/baseLR));}cx.stroke();
+cx.fillStyle='#94a3b8';cx.font='11px sans-serif';cx.fillText('warmup',50,h-14);cx.fillText('cosine decay',w/2,h-14);cx.fillText('lr',10,20);}
+ws.oninput=dr;ts.oninput=dr;dr();}
+
+// ===== L6: Sigmoid =====
+function iSig(){var cv=document.getElementById('c6');if(!cv)return;var cx=cv.getContext('2d'),sl=document.getElementById('sz');
+function sig(z){return 1/(1+Math.exp(-z));}
+function dr(){var z=parseFloat(sl.value);document.getElementById('szV').textContent=z.toFixed(1);var o=sig(z);document.getElementById('soV').textContent='σ('+z.toFixed(1)+')='+o.toFixed(4);
+var w=cv.width,h=cv.height,mx=w/2,sx=25,sy=h-60;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+cx.strokeStyle='#475569';cx.lineWidth=1;cx.beginPath();cx.moveTo(0,h/2);cx.lineTo(w,h/2);cx.stroke();cx.beginPath();cx.moveTo(mx,0);cx.lineTo(mx,h);cx.stroke();
+cx.setLineDash([4,4]);cx.strokeStyle='#334155';cx.beginPath();cx.moveTo(0,h-30);cx.lineTo(w,h-30);cx.stroke();cx.beginPath();cx.moveTo(0,30);cx.lineTo(w,30);cx.stroke();cx.setLineDash([]);
+cx.fillStyle='#94a3b8';cx.font='11px sans-serif';cx.fillText('1.0',5,26);cx.fillText('0.0',5,h-22);cx.fillText('0.5',5,h/2-4);
+cx.strokeStyle='#6366f1';cx.lineWidth=2.5;cx.beginPath();for(var px=0;px<w;px++){var x=(px-mx)/sx;var y=sig(x);cx.lineTo(px,h-30-y*(h-60));}cx.stroke();
+var px2=mx+z*sx,py=h-30-o*(h-60);cx.fillStyle='#f59e0b';cx.beginPath();cx.arc(px2,py,7,0,Math.PI*2);cx.fill();
+cx.fillStyle='#e2e8f0';cx.font='13px sans-serif';cx.fillText('('+z.toFixed(1)+','+o.toFixed(3)+')',px2+10,py-10);}
+sl.oninput=dr;dr();}
+
+// ===== L7: Neural Network =====
+function iNN(){var cv=document.getElementById('c7');if(!cv)return;var cx=cv.getContext('2d'),ls=document.getElementById('nl'),ns=document.getElementById('nn');
+function dr(){var nL=parseInt(ls.value),nN=parseInt(ns.value);document.getElementById('nlV').textContent=nL;document.getElementById('nnV').textContent=nN;
+var w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var layers=[3];for(var i=0;i<nL;i++)layers.push(nN);layers.push(2);var gx=w/(layers.length+1),pos=[];
+layers.forEach(function(n,li){var lp=[],gy=Math.min(50,(h-40)/n),sy=(h-(n-1)*gy)/2;for(var ni=0;ni<n;ni++)lp.push({x:gx*(li+1),y:sy+ni*gy});pos.push(lp);});
+for(var li=0;li<pos.length-1;li++){pos[li].forEach(function(f){pos[li+1].forEach(function(t){cx.strokeStyle='rgba(99,102,241,0.15)';cx.lineWidth=1;cx.beginPath();cx.moveTo(f.x,f.y);cx.lineTo(t.x,t.y);cx.stroke();});});}
+var labels=['输入层'];for(var i=0;i<nL;i++)labels.push('隐藏层'+(i+1));labels.push('输出层');
+pos.forEach(function(layer,li){cx.fillStyle='#94a3b8';cx.font='11px sans-serif';cx.textAlign='center';cx.fillText(labels[li],layer[0].x,16);
+layer.forEach(function(p){cx.beginPath();cx.arc(p.x,p.y,14,0,Math.PI*2);cx.fillStyle=li===0?'#1e293b':li===pos.length-1?'rgba(16,185,129,0.2)':'rgba(99,102,241,0.2)';cx.fill();
+cx.strokeStyle=li===0?'#475569':li===pos.length-1?'#10b981':'#6366f1';cx.lineWidth=2;cx.stroke();});});cx.textAlign='left';}
+ls.oninput=dr;ns.oninput=dr;dr();}
+
+// ===== L8: Activation + Backprop =====
+function iAct(i){saf(i);}
+function saf(idx){var cv=document.getElementById('c8');if(!cv)return;var cx=cv.getContext('2d');
+document.querySelectorAll('#actT .tab').forEach(function(t,j){t.classList.toggle('on',j===idx);});
+var fns=[{name:'ReLU',fn:function(x){return Math.max(0,x);},info:'f(x)=max(0,x)。简单高效，最常用。'},{name:'Sigmoid',fn:function(x){return 1/(1+Math.exp(-x));},info:'输出0~1，适合概率。有梯度消失问题。'},{name:'Tanh',fn:function(x){return Math.tanh(x);},info:'输出-1~1，Sigmoid改进版。'},{name:'GELU',fn:function(x){return 0.5*x*(1+Math.tanh(Math.sqrt(2/Math.PI)*(x+0.044715*x*x*x)));},info:'GPT使用。ReLU的平滑版本。'}];
+var f=fns[idx],w=cv.width,h=cv.height,mx=w/2,my=h/2,sx=40,sy=40;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+cx.strokeStyle='#475569';cx.lineWidth=1;cx.beginPath();cx.moveTo(0,my);cx.lineTo(w,my);cx.stroke();cx.beginPath();cx.moveTo(mx,0);cx.lineTo(mx,h);cx.stroke();
+cx.strokeStyle='#6366f1';cx.lineWidth=2.5;cx.beginPath();for(var px=0;px<w;px++){var x=(px-mx)/sx;var y=f.fn(x);var py=my-y*sy;if(py>0&&py<h)cx.lineTo(px,py);}cx.stroke();
+cx.fillStyle='#e2e8f0';cx.font='13px sans-serif';cx.fillText(f.name,10,20);var el=document.getElementById('afI');if(el)el.textContent=f.info;}
+var bpS=-1,bpA=null;
+function iBP(){bpS=-1;drBP();var el=document.getElementById('bpI');if(el)el.textContent='点击"播放"观察梯度传播';}
+function drBP(){var cv=document.getElementById('c8b');if(!cv)return;var cx=cv.getContext('2d'),w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var layers=[3,4,4,2],names=['输入层','隐藏层1','隐藏层2','输出层'];var gx=w/(layers.length+1),pos=[];
+layers.forEach(function(n,li){var lp=[],gy=50,sy=(h-(n-1)*gy)/2;for(var i=0;i<n;i++)lp.push({x:gx*(li+1),y:sy+i*gy});pos.push(lp);});
+for(var li=0;li<pos.length-1;li++){pos[li].forEach(function(f){pos[li+1].forEach(function(t){var act=bpS>=0&&(layers.length-2-li)<=bpS;cx.strokeStyle=act?'rgba(239,68,68,0.4)':'rgba(99,102,241,0.12)';cx.lineWidth=act?2:1;cx.beginPath();cx.moveTo(f.x,f.y);cx.lineTo(t.x,t.y);cx.stroke();});});}
+pos.forEach(function(layer,li){var act=bpS>=0&&(layers.length-1-li)<=bpS;cx.fillStyle='#94a3b8';cx.font='11px sans-serif';cx.textAlign='center';cx.fillText(names[li],layer[0].x,16);
+layer.forEach(function(p){cx.beginPath();cx.arc(p.x,p.y,14,0,Math.PI*2);cx.fillStyle=act?'rgba(239,68,68,0.25)':'rgba(99,102,241,0.15)';cx.fill();cx.strokeStyle=act?'#ef4444':'#6366f1';cx.lineWidth=2;cx.stroke();});});cx.textAlign='left';
+if(bpS>=0){cx.fillStyle='#ef4444';cx.font='13px sans-serif';cx.fillText('← 梯度传播方向',w-150,h-12);}}
+function abp(){bpS=-1;if(bpA)clearTimeout(bpA);var msgs=['1.计算输出层损失梯度','2.梯度传到隐藏层2','3.梯度传到隐藏层1','4.所有参数梯度计算完毕！'];
+function step(){bpS++;drBP();var el=document.getElementById('bpI');if(el)el.textContent=msgs[Math.min(bpS,msgs.length-1)];if(bpS<msgs.length-1)bpA=setTimeout(step,1200);}step();}
+function rbp(){if(bpA){clearTimeout(bpA);bpA=null;}bpS=-1;drBP();var el=document.getElementById('bpI');if(el)el.textContent='点击"播放"观察梯度传播';}
+
+// ===== L9: Embeddings =====
+function iEmb(i){seg(i);}
+function seg(idx){var cv=document.getElementById('c9');if(!cv)return;var cx=cv.getContext('2d');
+var groups=[[['猫',0.2,0.7,'#818cf8'],['狗',0.3,0.65,'#818cf8'],['兔子',0.25,0.8,'#818cf8'],['老虎',0.6,0.3,'#f59e0b'],['狮子',0.65,0.25,'#f59e0b'],['鹰',0.8,0.7,'#10b981'],['麻雀',0.75,0.8,'#10b981']],
+[['中国',0.15,0.3,'#ef4444'],['北京',0.25,0.25,'#ef4444'],['日本',0.15,0.6,'#f59e0b'],['东京',0.25,0.55,'#f59e0b'],['法国',0.65,0.3,'#818cf8'],['巴黎',0.75,0.25,'#818cf8'],['英国',0.65,0.6,'#10b981'],['伦敦',0.75,0.55,'#10b981']],
+[['开心',0.2,0.2,'#10b981'],['快乐',0.25,0.15,'#10b981'],['幸福',0.3,0.2,'#10b981'],['悲伤',0.7,0.7,'#ef4444'],['难过',0.75,0.75,'#ef4444'],['愤怒',0.7,0.3,'#f59e0b'],['生气',0.75,0.35,'#f59e0b']]];
+var g=groups[idx],w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+cx.strokeStyle='#1e293b';cx.lineWidth=1;for(var i=0;i<=10;i++){cx.beginPath();cx.moveTo(i*w/10,0);cx.lineTo(i*w/10,h);cx.stroke();cx.beginPath();cx.moveTo(0,i*h/10);cx.lineTo(w,i*h/10);cx.stroke();}
+g.forEach(function(w1,i){g.forEach(function(w2,j){if(j<=i||w1[3]!==w2[3])return;var d=Math.sqrt(Math.pow(w1[1]-w2[1],2)+Math.pow(w1[2]-w2[2],2));
+if(d<0.25){cx.strokeStyle=w1[3]+'30';cx.lineWidth=1;cx.beginPath();cx.moveTo(w1[1]*w+20,w1[2]*h);cx.lineTo(w2[1]*w+20,w2[2]*h);cx.stroke();}});});
+g.forEach(function(wd){var px=wd[1]*w+20,py=wd[2]*h;cx.fillStyle=wd[3]+'30';cx.beginPath();cx.arc(px,py,24,0,Math.PI*2);cx.fill();cx.fillStyle=wd[3];cx.font='13px sans-serif';cx.textAlign='center';cx.fillText(wd[0],px,py+4);});cx.textAlign='left';
+document.querySelectorAll('#emT .tab').forEach(function(t,j){t.classList.toggle('on',j===idx);});}
+
+// ===== L10: Attention =====
+var atTk=['小明','把','球','传给','了','小红','她','很','开心'];
+var atW=[[.6,.05,.1,.1,.02,.08,.02,.01,.02],[.15,.3,.1,.25,.05,.1,.02,.01,.02],[.1,.15,.4,.15,.05,.05,.03,.02,.05],[.2,.1,.15,.3,.05,.15,.02,.01,.02],[.05,.05,.05,.4,.3,.1,.02,.01,.02],[.15,.05,.05,.2,.05,.4,.05,.02,.03],[.08,.02,.03,.1,.02,.55,.1,.05,.05],[.02,.02,.02,.02,.02,.1,.3,.4,.1],[.02,.02,.02,.05,.02,.15,.2,.12,.4]];
+function iAttn(){var d=document.getElementById('atD');if(!d)return;var h='';atTk.forEach(function(t,i){h+='<span class="tk" style="background:var(--bg3);color:var(--tx)" onclick="sat('+i+')">'+t+'</span>';});d.innerHTML=h;sat(6);}
+function sat(idx){var tks=document.querySelectorAll('#atD .tk'),ws=atW[idx];
+tks.forEach(function(el,i){if(i===idx){el.style.background='#6366f1';el.style.color='white';}else{var a=Math.max(0.1,ws[i]*2);el.style.background='rgba(245,158,11,'+a+')';el.style.color=ws[i]>0.15?'white':'#e2e8f0';}});
+var cv=document.getElementById('c10');if(!cv)return;var cx=cv.getContext('2d'),cw=cv.width,ch=cv.height;cx.clearRect(0,0,cw,ch);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,cw,ch);
+var bw=40,gap=14,sx=(cw-atTk.length*(bw+gap))/2;cx.fillStyle='#94a3b8';cx.font='11px sans-serif';cx.textAlign='center';cx.fillText('"'+atTk[idx]+'" 的注意力权重：',cw/2,16);
+ws.forEach(function(w,i){var x=sx+i*(bw+gap),bh=w*(ch-60);var g=cx.createLinearGradient(x,ch-30-bh,x,ch-30);g.addColorStop(0,i===idx?'#6366f1':'#f59e0b');g.addColorStop(1,i===idx?'#4f46e5':'#d97706');cx.fillStyle=g;cx.fillRect(x,ch-30-bh,bw,bh);
+cx.fillStyle='#94a3b8';cx.font='10px sans-serif';cx.fillText(atTk[i],x+bw/2,ch-14);cx.fillStyle='#e2e8f0';cx.font='10px monospace';cx.fillText((w*100).toFixed(0)+'%',x+bw/2,ch-36-bh);});cx.textAlign='left';}
+
+// ===== L11: Transformer =====
+function iTF(){var cv=document.getElementById('c11');if(!cv)return;var cx=cv.getContext('2d'),w=cv.width,h=cv.height;
+var blocks=[{label:'输入嵌入+位置编码',y:h-60,h:40,color:'#06b6d4',info:'将文字转换为向量并加上位置信息。'},{label:'多头注意力',y:h-130,h:45,color:'#6366f1',info:'让每个词"看到"所有其他词，计算关联程度。多个注意力头并行工作。'},{label:'Add & Norm',y:h-170,h:25,color:'#475569',info:'残差连接+层归一化。防止信息丢失，稳定训练。'},{label:'前馈网络(FFN)',y:h-220,h:40,color:'#f59e0b',info:'两层全连接网络。模型存储"知识"的主要地方，参数量占2/3。'},{label:'Add & Norm',y:h-255,h:25,color:'#475569',info:'又一个残差连接+层归一化。'},{label:'× N 层',y:h-295,h:30,color:'#10b981',info:'以上结构重复N次。GPT-3有96层，GPT-4估计120+层。'},{label:'输出层(Softmax)',y:30,h:40,color:'#ef4444',info:'映射到词表大小的概率分布。'}];
+function dr(ai){cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);cx.strokeStyle='#334155';cx.lineWidth=2;cx.setLineDash([6,4]);cx.beginPath();cx.moveTo(w/2,h-15);cx.lineTo(w/2,20);cx.stroke();cx.setLineDash([]);
+cx.fillStyle='#334155';cx.beginPath();cx.moveTo(w/2-8,25);cx.lineTo(w/2+8,25);cx.lineTo(w/2,12);cx.fill();
+blocks.forEach(function(b,i){var bx=w/2-120,bw=240,isA=i===ai;cx.fillStyle=isA?b.color+'40':b.color+'18';cx.strokeStyle=isA?b.color:b.color+'60';cx.lineWidth=isA?2:1;cx.beginPath();cx.roundRect(bx,b.y,bw,b.h,8);cx.fill();cx.stroke();
+cx.fillStyle=isA?'#e2e8f0':'#94a3b8';cx.font=(isA?'bold ':'')+'12px sans-serif';cx.textAlign='center';cx.fillText(b.label,w/2,b.y+b.h/2+4);});cx.textAlign='left';}
+dr(-1);cv.onclick=function(e){var rect=cv.getBoundingClientRect(),y=(e.clientY-rect.top)*(h/rect.height),cl=-1;blocks.forEach(function(b,i){if(y>=b.y&&y<=b.y+b.h)cl=i;});dr(cl);document.getElementById('tfI').textContent=cl>=0?blocks[cl].info:'点击组件查看详情';};}
+
+// ===== L12: GPT Demo =====
+var gTk=[],gSeq=[[',','山里','有','一座','庙',',','庙里','有','一个','老和尚','。'],[',','山上','住着','一位','仙人',',','他','每天','修炼','。'],[',','山中','有','一条','小溪',',','溪水','清澈','见底','。']],gSi=0,gWi=0;
+function iGPT(){gTk=[];gWi=0;gSi=Math.floor(Math.random()*gSeq.length);document.getElementById('gO').textContent='从前有一座山';document.getElementById('gP').innerHTML='';document.getElementById('gC').style.display='inline';}
+function gn(){var seq=gSeq[gSi];if(gWi>=seq.length)return;var nw=seq[gWi];
+var all=[',','山里','有','一座','庙','山上','住着','仙人','小溪','清澈','老和尚','修炼','见底','。'];
+var pr=all.map(function(w){return w===nw?0.35+Math.random()*0.2:Math.random()*0.08;});var sum=pr.reduce(function(a,b){return a+b;},0);pr=pr.map(function(p){return p/sum;});
+var sorted=all.map(function(w,i){return{w:w,p:pr[i]};}).sort(function(a,b){return b.p-a.p;}).slice(0,5);
+var h='<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">';sorted.forEach(function(item){var is=item.w===nw;h+='<div style="background:'+(is?'rgba(99,102,241,0.3)':'var(--bg)')+';border:1px solid '+(is?'var(--p)':'var(--bg3)')+';border-radius:6px;padding:5px 10px;font-size:12px"><span style="color:'+(is?'var(--pl)':'var(--tx2)')+'">'+item.w+'</span> <span style="color:var(--tx2);font-size:10px">'+(item.p*100).toFixed(1)+'%</span></div>';});h+='</div>';
+document.getElementById('gP').innerHTML=h;gTk.push(nw);document.getElementById('gO').textContent='从前有一座山'+gTk.join('');gWi++;if(gWi>=seq.length)document.getElementById('gC').style.display='none';}
+function gr(){iGPT();}
+
+// ===== L13: RLHF =====
+var rlD=[{q:'如何学好编程？',a:[{t:'多写代码，从小项目开始。推荐从 Python 入手。',s:3,l:'有用、具体'},{t:'编程很简单，随便学学就会了。',s:1,l:'过于简略'},{t:'你应该先学完所有理论基础...',s:2,l:'信息过载'}]},{q:'地球到月球有多远？',a:[{t:'平均距离约384,400公里。光走这段距离约1.28秒。',s:3,l:'准确、有趣'},{t:'大概38万公里吧。',s:2,l:'不够自信'},{t:'月球距离地球1000万公里。',s:1,l:'数据错误'}]}],rlI=0;
+function iRLHF(){rlI=0;srl();}
+function srl(){var d=rlD[rlI%rlD.length];document.getElementById('rQ').textContent=d.q;var sh=d.a.slice().sort(function(){return Math.random()-0.5;});
+var h='';sh.forEach(function(a,i){h+='<div class="qo" style="white-space:pre-wrap;line-height:1.5;margin:6px 0" onclick="crl(this,'+a.s+',\''+a.l.replace(/'/g,"\\'")+'\')">';h+='<span style="color:var(--acc);font-size:11px">回答'+(i+1)+'：</span><br>'+a.t+'</div>';});
+document.getElementById('rO').innerHTML=h;document.getElementById('rF').style.display='none';}
+function crl(el,s,l){var fb=document.getElementById('rF');if(s===3){fb.style.display='block';fb.style.background='rgba(16,185,129,.1)';fb.style.color='#10b981';fb.textContent='✓ 最佳回答！'+l+'。';el.style.borderColor='#10b981';}else{fb.style.display='block';fb.style.background='rgba(245,158,11,.1)';fb.style.color='#f59e0b';fb.textContent='问题：'+l+'。试试选更好的。';el.style.borderColor='#f59e0b';}}
+function nr(){rlI++;srl();}
+var tsD=[{lb:'阶段1：预训练',tx:'<b>目标：</b>学习语言和世界知识<br><b>数据：</b>万亿级文本<br><b>方法：</b>预测下一个词'},{lb:'阶段2：SFT',tx:'<b>目标：</b>学会对话格式<br><b>数据：</b>人类标注的高质量对话<br><b>方法：</b>在对话数据上继续训练'},{lb:'阶段3：RLHF',tx:'<b>目标：</b>让回答更有用、更安全<br><b>数据：</b>人类偏好排序<br><b>方法：</b>训练奖励模型 → PPO 优化'}];
+function sts(i){document.querySelectorAll('#trS .stp').forEach(function(s,j){s.classList.toggle('on',j===i);s.classList.toggle('dn',j<i);});document.getElementById('trC').innerHTML='<div class="fey"><div class="lb">'+tsD[i].lb+'</div><p>'+tsD[i].tx+'</p></div>';}
+
+// ===== L14: Computation Graph =====
+var graphState=0; // 0=init,1=fwd,2=bwd
+function iGraph(){graphState=0;drGraph();}
+function drGraph(){var cv=document.getElementById('c14');if(!cv)return;var cx=cv.getContext('2d'),w=cv.width,h=cv.height;
+cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var nodes=[{id:'x',x:60,y:80,v:3,g:null},{id:'y',x:60,y:220,v:2,g:null},{id:'mul',x:220,y:150,v:null,g:null,op:'×'},{id:'add',x:380,y:100,v:null,g:null,op:'+'},{id:'z',x:480,y:100,v:null,g:null}];
+if(graphState>=1){nodes[2].v=nodes[0].v*nodes[1].v;nodes[3].v=nodes[2].v+nodes[0].v;nodes[4].v=nodes[3].v;}
+if(graphState>=2){nodes[4].g=1;nodes[3].g=1;nodes[2].g=1;nodes[0].g=nodes[1].v+1;nodes[1].g=nodes[0].v;}
+var edges=[{from:0,to:2},{from:1,to:2},{from:2,to:3},{from:0,to:3},{from:3,to:4}];
+edges.forEach(function(e){var f=nodes[e.from],t=nodes[e.to];
+cx.strokeStyle=graphState>=2?'rgba(239,68,68,0.4)':graphState>=1?'rgba(99,102,241,0.4)':'#334155';cx.lineWidth=2;
+cx.beginPath();cx.moveTo(f.x,f.y);cx.lineTo(t.x,t.y);cx.stroke();
+var mx2=(f.x+t.x)/2,my2=(f.y+t.y)/2;cx.fillStyle='#334155';var a=Math.atan2(t.y-f.y,t.x-f.x);
+cx.beginPath();cx.moveTo(mx2+8*Math.cos(a),my2+8*Math.sin(a));cx.lineTo(mx2-6*Math.cos(a-0.4),my2-6*Math.sin(a-0.4));cx.lineTo(mx2-6*Math.cos(a+0.4),my2-6*Math.sin(a+0.4));cx.fill();});
+nodes.forEach(function(n){var isOp=n.op;var r=isOp?20:24;
+cx.beginPath();cx.arc(n.x,n.y,r,0,Math.PI*2);
+if(graphState>=2&&n.g!==null){cx.fillStyle='rgba(239,68,68,0.2)';cx.fill();cx.strokeStyle='#ef4444';}
+else if(graphState>=1&&n.v!==null){cx.fillStyle='rgba(99,102,241,0.2)';cx.fill();cx.strokeStyle='#6366f1';}
+else{cx.fillStyle='rgba(99,102,241,0.1)';cx.fill();cx.strokeStyle='#475569';}
+cx.lineWidth=2;cx.stroke();
+cx.fillStyle='#e2e8f0';cx.font=isOp?'18px sans-serif':'13px sans-serif';cx.textAlign='center';cx.textBaseline='middle';
+cx.fillText(isOp?n.op:n.id,n.x,n.y);
+if(graphState>=1&&n.v!==null){cx.fillStyle='#818cf8';cx.font='11px monospace';cx.fillText('='+n.v,n.x,n.y+r+14);}
+if(graphState>=2&&n.g!==null){cx.fillStyle='#ef4444';cx.font='11px monospace';cx.fillText('g='+n.g,n.x,n.y-r-10);}
+cx.textBaseline='alphabetic';});cx.textAlign='left';
+if(graphState===0){cx.fillStyle='#94a3b8';cx.font='12px sans-serif';cx.fillText('z = (x × y) + x，其中 x=3, y=2',10,h-10);}
+if(graphState===1){cx.fillStyle='#818cf8';cx.font='12px sans-serif';cx.fillText('前向：x×y=6, 6+x=9, z=9',10,h-10);}
+if(graphState===2){cx.fillStyle='#ef4444';cx.font='12px sans-serif';cx.fillText('反向：∂z/∂x = y+1 = 3（两条路径累加！），∂z/∂y = x = 3',10,h-10);}}
+function fwdGraph(){graphState=1;drGraph();document.getElementById('graphI').textContent='前向传播完成：z = (3×2) + 3 = 9';}
+function bwdGraph(){graphState=2;drGraph();document.getElementById('graphI').textContent='反向传播完成：x 的梯度 = y + 1 = 3（来自两条路径的累加）';}
+function rstGraph(){graphState=0;drGraph();document.getElementById('graphI').textContent='x=3, y=2 → 点击"前向传播"开始';}
+
+// ===== L15: BPE =====
+var bpeState={text:'',ids:[],vocab:[],merges:[],step:0};
+function bpeReset(){var text='aaabdaaabac';bpeState.text=text;var chars=[];var seen={};
+for(var i=0;i<text.length;i++){var c=text[i];if(!seen[c]){seen[c]=1;chars.push(c);}}
+chars.sort();bpeState.vocab=chars.slice();bpeState.ids=[];
+for(var i=0;i<text.length;i++){bpeState.ids.push(bpeState.vocab.indexOf(text[i]));}
+bpeState.merges=[];bpeState.step=0;drBPE();}
+function drBPE(){var el=document.getElementById('bpeToks');if(!el)return;
+var h='';bpeState.ids.forEach(function(id){var isNew=id>=4;h+='<span class="bpe-tk '+(isNew?'bpe-new':'bpe-old')+'">'+bpeState.vocab[id]+'</span>';});el.innerHTML=h;
+document.getElementById('bpeVocab').textContent=bpeState.vocab.join(' | ');
+var mh='';bpeState.merges.forEach(function(m,i){mh+='<div style="margin:2px 0">第'+(i+1)+'步：'+m[0]+' + '+m[1]+' → '+m[2]+'</div>';});
+document.getElementById('bpeMerges').innerHTML=mh||'（还没有合并规则）';
+document.getElementById('bpeI').textContent='词表大小：'+bpeState.vocab.length+' | Token数：'+bpeState.ids.length;}
+function bpeStep(){var ids=bpeState.ids;if(ids.length<=1)return;
+var pairs={};for(var i=0;i<ids.length-1;i++){var key=ids[i]+','+ids[i+1];pairs[key]=(pairs[key]||0)+1;}
+var bestKey=null,bestCount=0;for(var k in pairs){if(pairs[k]>bestCount){bestCount=pairs[k];bestKey=k;}}
+if(!bestKey||bestCount<2){document.getElementById('bpeI').textContent='没有频率>=2的相邻对了，BPE训练完成！';return;}
+var parts=bestKey.split(',').map(Number);var a=parts[0],b=parts[1];
+var newTok=bpeState.vocab[a]+bpeState.vocab[b];var newId=bpeState.vocab.length;bpeState.vocab.push(newTok);
+bpeState.merges.push([bpeState.vocab[a],bpeState.vocab[b],newTok]);
+var newIds=[];var i=0;while(i<ids.length){if(i<ids.length-1&&ids[i]===a&&ids[i+1]===b){newIds.push(newId);i+=2;}else{newIds.push(ids[i]);i++;}}
+bpeState.ids=newIds;bpeState.step++;drBPE();}
+
+// ===== L16: LoRA Calculator =====
+function iLora(){var cv=document.getElementById('c16');if(!cv)return;var cx=cv.getContext('2d');
+var ds=document.getElementById('loraD'),rs=document.getElementById('loraR'),ns=document.getElementById('loraN');
+function dr(){var d=parseInt(ds.value),r=parseInt(rs.value),n=parseInt(ns.value);
+document.getElementById('loraDV').textContent=d;document.getElementById('loraRV').textContent=r;document.getElementById('loraNV').textContent=n;
+var fullParams=d*d*n;var loraParams=(d*r+r*d)*n;var ratio=(loraParams/fullParams*100).toFixed(2);
+var w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+// Draw W matrix
+var ww=120,wh=80,wx=40,wy=30;
+cx.fillStyle='rgba(99,102,241,0.15)';cx.strokeStyle='#6366f1';cx.lineWidth=1;cx.fillRect(wx,wy,ww,wh);cx.strokeRect(wx,wy,ww,wh);
+cx.fillStyle='#818cf8';cx.font='12px sans-serif';cx.textAlign='center';cx.fillText('W ['+d+'×'+d+']',wx+ww/2,wy+wh/2+4);cx.fillText('冻结',wx+ww/2,wy+wh+16);
+// Draw + sign
+cx.fillStyle='#e2e8f0';cx.font='24px sans-serif';cx.fillText('+',wx+ww+30,wy+wh/2+8);
+// Draw A matrix
+var ax=wx+ww+60,aw=40,ah=80;
+cx.fillStyle='rgba(245,158,11,0.15)';cx.strokeStyle='#f59e0b';cx.fillRect(ax,wy,aw,ah);cx.strokeRect(ax,wy,aw,ah);
+cx.fillStyle='#f59e0b';cx.font='11px sans-serif';cx.fillText('A',ax+aw/2,wy+ah/2+4);cx.fillText('['+r+'×'+d+']',ax+aw/2,wy+ah+16);
+// Draw × sign
+cx.fillStyle='#e2e8f0';cx.font='18px sans-serif';cx.fillText('×',ax+aw+15,wy+ah/2+4);
+// Draw B matrix
+var bx=ax+aw+30,bw=80,bh=40;
+cx.fillStyle='rgba(16,185,129,0.15)';cx.strokeStyle='#10b981';cx.fillRect(bx,wy+20,bw,bh);cx.strokeRect(bx,wy+20,bw,bh);
+cx.fillStyle='#10b981';cx.font='11px sans-serif';cx.fillText('B',bx+bw/2,wy+20+bh/2+4);cx.fillText('['+d+'×'+r+']',bx+bw/2,wy+20+bh+16);
+// Stats
+cx.textAlign='left';cx.fillStyle='#e2e8f0';cx.font='13px sans-serif';
+var sy=wy+wh+50;
+cx.fillText('全量微调：'+(fullParams/1e6).toFixed(1)+'M 参数',40,sy);
+cx.fillStyle='#10b981';cx.fillText('LoRA：'+(loraParams/1e6).toFixed(3)+'M 参数 ('+ratio+'%)',40,sy+22);
+// Bar comparison
+var barY=sy+44,barH=16,maxW=w-80;
+cx.fillStyle='rgba(99,102,241,0.3)';cx.fillRect(40,barY,maxW,barH);
+cx.fillStyle='#10b981';cx.fillRect(40,barY,Math.max(2,maxW*loraParams/fullParams),barH);
+cx.fillStyle='#94a3b8';cx.font='11px sans-serif';cx.fillText('参数量对比',40,barY+barH+14);
+document.getElementById('loraI').textContent='节省 '+(100-parseFloat(ratio)).toFixed(2)+'% 参数！rank='+r+' 时每层只需 '+((d*r*2)/1e3).toFixed(1)+'K 参数';}
+ds.oninput=dr;rs.oninput=dr;ns.oninput=dr;dr();}
+
+// ===== L17: Optimizer Comparison =====
+var optAnim=null;
+function iOpt(){rstOpt();}
+function rstOpt(){if(optAnim)cancelAnimationFrame(optAnim);optAnim=null;drOpt([],[],[]);document.getElementById('optI').textContent='点击"开始优化"观察三种优化器的轨迹';}
+function drOpt(pathSGD,pathMom,pathAdam){var cv=document.getElementById('c17');if(!cv)return;var cx=cv.getContext('2d'),w=cv.width,h=cv.height;
+cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+// Draw contour (Rosenbrock-like)
+for(var px=0;px<w;px+=4){for(var py=0;py<h;py+=4){var x=(px/w)*6-3,y=(py/h)*6-3;var v=(1-x)*(1-x)+10*(y-x*x)*(y-x*x);var c=Math.min(255,Math.floor(v*0.8));cx.fillStyle='rgb('+Math.floor(c*0.1)+','+Math.floor(c*0.15)+','+Math.floor(c*0.3)+')';cx.fillRect(px,py,4,4);}}
+// Minimum marker
+var minPx=(1+3)/6*w,minPy=(1+3)/6*h;cx.fillStyle='rgba(16,185,129,0.5)';cx.beginPath();cx.arc(minPx,minPy,6,0,Math.PI*2);cx.fill();cx.fillStyle='#10b981';cx.font='10px sans-serif';cx.fillText('最优',minPx+8,minPy+4);
+function drawPath(path,color){if(path.length<2)return;cx.strokeStyle=color;cx.lineWidth=2;cx.beginPath();
+path.forEach(function(p,i){var px=(p[0]+3)/6*w,py=(p[1]+3)/6*h;if(i===0)cx.moveTo(px,py);else cx.lineTo(px,py);});cx.stroke();
+var last=path[path.length-1];cx.fillStyle=color;cx.beginPath();cx.arc((last[0]+3)/6*w,(last[1]+3)/6*h,4,0,Math.PI*2);cx.fill();}
+drawPath(pathSGD,'#ef4444');drawPath(pathMom,'#f59e0b');drawPath(pathAdam,'#818cf8');
+cx.fillStyle='#ef4444';cx.font='11px sans-serif';cx.fillText('● SGD',10,h-36);cx.fillStyle='#f59e0b';cx.fillText('● SGD+动量',70,h-36);cx.fillStyle='#818cf8';cx.fillText('● AdamW',170,h-36);}
+function runOpt(){if(optAnim)cancelAnimationFrame(optAnim);
+var lr=parseFloat(document.getElementById('optLR').value);document.getElementById('optLRV').textContent=lr.toFixed(3);
+function grad(x,y){return[-2*(1-x)+20*x*(y-x*x)*(-2*x), 20*(y-x*x)];}
+var sx=-2,sy=-1;
+var sgdP=[[sx,sy]],sgdX=sx,sgdY=sy;
+var momP=[[sx,sy]],momX=sx,momY=sy,mvx=0,mvy=0;
+var admP=[[sx,sy]],admX=sx,admY=sy,amx=0,amy=0,avx=0,avy=0,at=0;
+var step=0;
+function animate(){step++;var g;
+g=grad(sgdX,sgdY);sgdX-=lr*g[0];sgdY-=lr*g[1];sgdP.push([sgdX,sgdY]);
+g=grad(momX,momY);mvx=0.9*mvx+g[0];mvy=0.9*mvy+g[1];momX-=lr*mvx;momY-=lr*mvy;momP.push([momX,momY]);
+g=grad(admX,admY);at++;amx=0.9*amx+0.1*g[0];amy=0.9*amy+0.1*g[1];avx=0.999*avx+0.001*g[0]*g[0];avy=0.999*avy+0.001*g[1]*g[1];
+var mhx=amx/(1-Math.pow(0.9,at)),mhy=amy/(1-Math.pow(0.9,at));var vhx=avx/(1-Math.pow(0.999,at)),vhy=avy/(1-Math.pow(0.999,at));
+admX-=lr*mhx/(Math.sqrt(vhx)+1e-8);admY-=lr*mhy/(Math.sqrt(vhy)+1e-8);admP.push([admX,admY]);
+drOpt(sgdP,momP,admP);
+document.getElementById('optI').textContent='步骤'+step+' | SGD:('+sgdX.toFixed(2)+','+sgdY.toFixed(2)+') | Adam:('+admX.toFixed(2)+','+admY.toFixed(2)+')';
+if(step<300)optAnim=requestAnimationFrame(animate);}
+animate();}
+
+// ===== L18: Ring AllReduce =====
+var arAnim=null,arStep=0;
+function iAR(){arStep=0;drAR();}
+function drAR(){var cv=document.getElementById('c18');if(!cv)return;var cx=cv.getContext('2d'),w=cv.width,h=cv.height;
+cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var N=4,R=120,mx=w/2,my=h/2-10;
+var colors=['#ef4444','#f59e0b','#818cf8','#10b981'];
+var labels=['GPU 0','GPU 1','GPU 2','GPU 3'];
+var initVals=[[1,0,0,0],[0,2,0,0],[0,0,3,0],[0,0,0,4]];
+var vals=initVals.map(function(v){return v.slice();});
+// simulate scatter-reduce steps
+for(var s=0;s<Math.min(arStep,N-1);s++){for(var rank=0;rank<N;rank++){var recv=(rank+N-s-1)%N;var send=(rank+N-s)%N;vals[rank][recv]+=initVals[(rank+N-1)%N][recv];}}
+// draw ring connections
+for(var i=0;i<N;i++){var a1=i*Math.PI*2/N-Math.PI/2,a2=((i+1)%N)*Math.PI*2/N-Math.PI/2;
+var x1=mx+R*Math.cos(a1),y1=my+R*Math.sin(a1),x2=mx+R*Math.cos(a2),y2=my+R*Math.sin(a2);
+cx.strokeStyle=arStep>0?'rgba(99,102,241,0.4)':'#334155';cx.lineWidth=2;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();
+// arrow
+var amx=(x1+x2)/2,amy=(y1+y2)/2,aa=Math.atan2(y2-y1,x2-x1);
+cx.fillStyle=arStep>0?'rgba(99,102,241,0.6)':'#475569';cx.beginPath();cx.moveTo(amx+8*Math.cos(aa),amy+8*Math.sin(aa));cx.lineTo(amx-6*Math.cos(aa-0.4),amy-6*Math.sin(aa-0.4));cx.lineTo(amx-6*Math.cos(aa+0.4),amy-6*Math.sin(aa+0.4));cx.fill();}
+// draw nodes
+for(var i=0;i<N;i++){var a=i*Math.PI*2/N-Math.PI/2;var nx=mx+R*Math.cos(a),ny=my+R*Math.sin(a);
+cx.beginPath();cx.arc(nx,ny,36,0,Math.PI*2);cx.fillStyle='rgba(99,102,241,0.15)';cx.fill();cx.strokeStyle=colors[i];cx.lineWidth=2;cx.stroke();
+cx.fillStyle='#e2e8f0';cx.font='12px sans-serif';cx.textAlign='center';cx.fillText(labels[i],nx,ny-12);
+cx.fillStyle=colors[i];cx.font='11px monospace';cx.fillText('['+vals[i].join(',')+']',nx,ny+8);}
+cx.textAlign='left';
+// legend
+cx.fillStyle='#94a3b8';cx.font='12px sans-serif';
+if(arStep===0)cx.fillText('初始状态：每个 GPU 有自己的梯度',10,h-10);
+else if(arStep<N)cx.fillText('Scatter-Reduce 第'+arStep+'步：累加接收到的块',10,h-10);
+else cx.fillText('AllReduce 完成！所有 GPU 拥有相同的梯度总和',10,h-10);}
+function runAR(){arStep=0;if(arAnim)clearTimeout(arAnim);
+function step(){arStep++;drAR();
+var el=document.getElementById('arI');
+if(arStep<4){el.textContent='Scatter-Reduce 第'+arStep+'/3 步...';arAnim=setTimeout(step,1200);}
+else{el.textContent='AllReduce 完成！每个 GPU 都有了 [1,2,3,4] 的总和。实际中还需除以 N 得到平均值。';}}
+step();}
+function rstAR(){if(arAnim){clearTimeout(arAnim);arAnim=null;}arStep=0;drAR();document.getElementById('arI').textContent='4 个节点各有不同的梯度值，点击开始观察同步过程';}
+
+// ===== L19: Double Buffer + EWC =====
+var dbVal={a:1.0,b:1.0,aIsActive:true,trainSteps:0};
+function iDB(){dbRst();}
+function dbRst(){dbVal={a:1.0,b:1.0,aIsActive:true,trainSteps:0};drDB();}
+function drDB(){
+var aEl=document.getElementById('dbA'),bEl=document.getElementById('dbB');
+if(!aEl)return;
+if(dbVal.aIsActive){aEl.className='dbuf dbuf-a';bEl.className='dbuf dbuf-s';
+document.getElementById('dbAV').textContent=dbVal.a.toFixed(2);document.getElementById('dbBV').textContent=dbVal.b.toFixed(2);}
+else{aEl.className='dbuf dbuf-s';bEl.className='dbuf dbuf-a';
+document.getElementById('dbAV').textContent=dbVal.a.toFixed(2);document.getElementById('dbBV').textContent=dbVal.b.toFixed(2);}
+document.getElementById('dbI').textContent='推理使用 '+(dbVal.aIsActive?'A':'B')+' 缓冲区（绿色），训练更新 '+(dbVal.aIsActive?'B':'A')+' 缓冲区（黄色）';}
+function dbTrain(){if(dbVal.aIsActive){dbVal.b-=0.1*(Math.random()*0.5+0.75);}else{dbVal.a-=0.1*(Math.random()*0.5+0.75);}dbVal.trainSteps++;drDB();}
+function dbSwap(){dbVal.aIsActive=!dbVal.aIsActive;drDB();document.getElementById('dbI').textContent='原子交换完成！推理现在使用更新后的参数，零停机时间。';}
+
+function iEWC(){var cv=document.getElementById('c19');if(!cv)return;var cx=cv.getContext('2d');
+var ds=document.getElementById('ewcD'),ls=document.getElementById('ewcL');
+var fisher=[0.1,0.8,0.3,0.95,0.05,0.6,0.2,0.7];
+var names=['w1','w2','w3','w4','w5','w6','w7','w8'];
+function dr(){var d=parseFloat(ds.value),lam=parseFloat(ls.value);
+document.getElementById('ewcDV').textContent=d.toFixed(2);document.getElementById('ewcLV').textContent=lam.toFixed(1);
+var w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var bw=40,gap=16,sx=(w-fisher.length*(bw+gap))/2,maxH=h-60;
+var totalPenalty=0;
+fisher.forEach(function(f,i){var x=sx+i*(bw+gap);var penalty=lam*0.5*f*d*d;totalPenalty+=penalty;
+var bh=Math.min(penalty/0.5*maxH,maxH);
+var g=cx.createLinearGradient(x,h-30-bh,x,h-30);
+g.addColorStop(0,f>0.5?'#ef4444':'#f59e0b');g.addColorStop(1,f>0.5?'#991b1b':'#92400e');
+cx.fillStyle=g;cx.fillRect(x,h-30-bh,bw,bh);
+cx.fillStyle='#94a3b8';cx.font='10px sans-serif';cx.textAlign='center';
+cx.fillText(names[i],x+bw/2,h-14);
+cx.fillStyle='#e2e8f0';cx.font='10px monospace';
+cx.fillText('F='+f.toFixed(1),x+bw/2,h-36-bh);});
+cx.textAlign='left';cx.fillStyle='#e2e8f0';cx.font='12px sans-serif';
+cx.fillText('EWC 总惩罚: '+totalPenalty.toFixed(3),10,20);
+cx.fillStyle='#94a3b8';cx.font='11px sans-serif';
+cx.fillText('Fisher 高的参数（红色）受到更强约束',10,38);
+document.getElementById('ewcI').textContent='偏移='+d.toFixed(2)+' λ='+lam.toFixed(1)+' → Fisher高的参数惩罚更重，保护旧知识';}
+ds.oninput=dr;ls.oninput=dr;dr();}
+
+// ===== L20: Hardware Dispatch =====
+function iHW(){var cv=document.getElementById('c20');if(!cv)return;var cx=cv.getContext('2d');
+var sl=document.getElementById('hwSize');
+function dr(){var size=parseInt(sl.value);document.getElementById('hwSizeV').textContent=size;
+var w=cv.width,h=cv.height;cx.clearRect(0,0,w,h);cx.fillStyle='#0a0f1a';cx.fillRect(0,0,w,h);
+var useGPU=size>=128;
+// Draw flowchart
+cx.fillStyle='rgba(99,102,241,0.15)';cx.strokeStyle='#6366f1';cx.lineWidth=1;
+cx.beginPath();cx.roundRect(w/2-60,20,120,36,8);cx.fill();cx.stroke();
+cx.fillStyle='#e2e8f0';cx.font='12px sans-serif';cx.textAlign='center';cx.fillText('matmul(A,B)',w/2,42);
+// Decision diamond
+cx.fillStyle='rgba(245,158,11,0.15)';cx.strokeStyle='#f59e0b';
+cx.beginPath();cx.moveTo(w/2,80);cx.lineTo(w/2+70,115);cx.lineTo(w/2,150);cx.lineTo(w/2-70,115);cx.closePath();cx.fill();cx.stroke();
+cx.fillStyle='#f59e0b';cx.font='11px sans-serif';cx.fillText('size >= 128?',w/2,118);
+// Arrows
+cx.strokeStyle='#475569';cx.lineWidth=1.5;
+cx.beginPath();cx.moveTo(w/2,56);cx.lineTo(w/2,80);cx.stroke();
+// Yes arrow (right -> GPU)
+cx.strokeStyle=useGPU?'#10b981':'#475569';cx.beginPath();cx.moveTo(w/2+70,115);cx.lineTo(w/2+140,115);cx.lineTo(w/2+140,170);cx.stroke();
+cx.fillStyle=useGPU?'#10b981':'#94a3b8';cx.font='11px sans-serif';cx.fillText('Yes',w/2+100,108);
+// No arrow (left -> CPU)
+cx.strokeStyle=useGPU?'#475569':'#ef4444';cx.beginPath();cx.moveTo(w/2-70,115);cx.lineTo(w/2-140,115);cx.lineTo(w/2-140,170);cx.stroke();
+cx.fillStyle=useGPU?'#94a3b8':'#ef4444';cx.fillText('No',w/2-100,108);
+// CPU box
+cx.fillStyle=useGPU?'rgba(99,102,241,0.08)':'rgba(239,68,68,0.15)';cx.strokeStyle=useGPU?'#475569':'#ef4444';cx.lineWidth=useGPU?1:2;
+cx.beginPath();cx.roundRect(w/2-200,170,120,50,8);cx.fill();cx.stroke();
+cx.fillStyle=useGPU?'#94a3b8':'#e2e8f0';cx.font='13px sans-serif';cx.fillText('CPU',w/2-140,192);
+cx.font='10px sans-serif';cx.fillText('tiled matmul',w/2-140,208);
+// GPU box
+cx.fillStyle=useGPU?'rgba(16,185,129,0.15)':'rgba(99,102,241,0.08)';cx.strokeStyle=useGPU?'#10b981':'#475569';cx.lineWidth=useGPU?2:1;
+cx.beginPath();cx.roundRect(w/2+80,170,120,50,8);cx.fill();cx.stroke();
+cx.fillStyle=useGPU?'#e2e8f0':'#94a3b8';cx.font='13px sans-serif';cx.fillText('GPU',w/2+140,192);
+cx.font='10px sans-serif';cx.fillText('cuBLAS',w/2+140,208);
+// Performance estimate
+var cpuTime=size*size*size/1e6;var gpuTime=0.5+size*size*size/1e8;
+cx.textAlign='left';cx.fillStyle='#94a3b8';cx.font='12px sans-serif';
+cx.fillText('矩阵大小: '+size+'×'+size,20,260);
+cx.fillText('CPU 估计: '+(cpuTime*1000).toFixed(1)+'μs',20,278);
+cx.fillText('GPU 估计: '+(gpuTime*1000).toFixed(1)+'μs (含传输)',250,278);
+cx.fillStyle=useGPU?'#10b981':'#ef4444';cx.font='bold 12px sans-serif';
+cx.fillText('→ 选择: '+(useGPU?'GPU (cuBLAS)':'CPU (tiled)'),20,h-10);
+document.getElementById('hwI').textContent=size+'×'+size+' 矩阵 → '+(useGPU?'GPU 更快（并行计算收益 > 传输开销）':'CPU 更快（传输开销 > 并行收益）');}
+sl.oninput=dr;dr();}
+
+
+// ===== INIT =====
+loadP();
+document.querySelectorAll('.ni').forEach(function(el,i){el.addEventListener('click',function(){go(i);});});
+up();go(cur);
+</script>
+</body>
+</html>

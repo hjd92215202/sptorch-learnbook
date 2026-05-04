@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open /Users/brace/develop/new/index.html)",
+      "Bash(node -e ' *)",
+      "Read(//Users/brace/develop/sptorch/**)",
+      "Bash(grep -E \"\\\\.rs$\")",
+      "Bash(node -e *)",
+      "Bash(grep -n \"^'}},\\\\$\" /Users/brace/develop/new/index.html)",
+      "Bash(python3)",
+      "Bash(node --eval ' *)",
+      "Bash(node /tmp/test_each.js)",
+      "Read(//private/tmp/**)"
+    ]
+  }
+}
